@@ -1,3 +1,8 @@
+#ifdef TESTING
+// #warning "TESTING macro is defined"
+#include "../include/mock_malloc.h"
+#endif
+
 #include "../include/hashtable.h"
 
 // init table
@@ -49,7 +54,7 @@ void Set(HashTable *ht, char *key, char *value) {
                         free(entry->Value);
                         entry->Value = strdup(value);
                         if (!entry->Value) {
-                                printf("failed to allocate memory: %s",
+                                printf("failed to allocate memory: %s\n",
                                        strerror(errno));
                                 return;
                         }
@@ -60,7 +65,7 @@ void Set(HashTable *ht, char *key, char *value) {
 
         entry = malloc(sizeof(Entry)); // consider also calloc
         if (!entry) {
-                printf("failed to allocate memory: %s", strerror(errno));
+                printf("failed to allocate memory: %s\n", strerror(errno));
                 return;
                 // exit(-1);
         }

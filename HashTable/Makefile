@@ -1,31 +1,47 @@
 CC = gcc
 CFLAGS = -Iunity -Isrc -Iinclude -Wall -Wextra -Werror -g
-OPTIMIZED_FLAGS = -O2 -s
+OPTIMIZED_FLAGS = -Isrc -Iinclude -Wall -Wextra -Werror -O2 -s
 SRC = $(wildcard src/*.c)
 TEST_SRC = $(wildcard test/*.c) $(wildcard unity/*.c)
 
 APP_SRC = $(filter-out src/test_app.c, $(SRC))
 APP_OBJ = $(APP_SRC:.c=.o)
-TEST_OBJ = $(TEST_SRC:.c=.o) $(filter-out src/main.o, $(SRC:.c=.o))
+TEST_APP_SRC = $(filter-out src/main.c, $(SRC))
+TEST_OBJ = $(TEST_SRC:.c=.o) $(patsubst src/%.c,test_obj/%.o,$(TEST_APP_SRC))
 
-APP_TARGET = hashtable
+OPTIMIZED_OBJ = $(APP_SRC:.c=.optimized.o)
+
+APP_TARGET = hashtable_dbg
 TEST_TARGET = test_app
-OPTIMIZED_TARGET = hashtable_optimized
+OPTIMIZED_TARGET = hashtable_prod
 
 all: $(APP_TARGET) $(TEST_TARGET)
 
+# Create the application binary
 $(APP_TARGET): $(APP_OBJ)
-	@$(CC) -o $@ $^
+	$(CC) $(CFLAGS) -o $@ $^
 
+# Create the test binary
 $(TEST_TARGET): $(TEST_OBJ)
-	@$(CC) -o $@ $^
+	$(CC) $(CFLAGS) -o $@ $^
 
-$(OPTIMIZED_TARGET): $(APP_OBJ)
-	@$(CC) $(OPTIMIZED_FLAGS) -o $@ $^
+# Rule to create the optimized production binary
+$(OPTIMIZED_TARGET): $(OPTIMIZED_OBJ)
+	$(CC) $(OPTIMIZED_FLAGS) -o $@ $^
 
+# General rule
 %.o: %.c
-	@$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
+
+%.optimized.o: %.c
+	$(CC) $(OPTIMIZED_FLAGS) -c $< -o $@
+
+# Compile test object files with TESTING defined
+test_obj/%.o: src/%.c
+	mkdir -p test_obj
+	$(CC) $(CFLAGS) -DTESTING -c $< -o $@
 
 clean:
-	@rm -f $(APP_OBJ) $(TEST_OBJ) $(APP_TARGET) $(TEST_TARGET) $(OPTIMIZED_TARGET)
+	@rm -f $(APP_OBJ) $(TEST_OBJ) $(APP_TARGET) $(TEST_TARGET) $(OPTIMIZED_TARGET) $(OPTIMIZED_OBJ)
+	@rm -rf test_obj/
 
