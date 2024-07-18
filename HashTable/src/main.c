@@ -1,7 +1,7 @@
-#include "hashtable.h"
+#include "../include/hashtable.h"
 
 int main() {
-        HashTable *ht = createTable();
+        HashTable *ht = createTable(100);
         char key1[] = "key1";
         char key2[] = "key2";
         char val1[] = "val1";

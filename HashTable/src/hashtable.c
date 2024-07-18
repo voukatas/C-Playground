@@ -1,21 +1,23 @@
-#include "hashtable.h"
+#include "../include/hashtable.h"
 
 // init table
-HashTable *createTable() {
+HashTable *createTable(int capacity) {
         HashTable *ht = malloc(sizeof(HashTable));
         if (!ht) {
                 printf("failed to allocate memory: %s", strerror(errno));
                 exit(-1);
         }
 
-        ht->table = malloc(sizeof(Entry *) * TABLE_SIZE);
+        ht->table = malloc(sizeof(Entry *) * capacity);
         if (!ht->table) {
                 printf("failed to allocate memory: %s", strerror(errno));
                 free(ht);
                 exit(-1);
         }
 
-        for (int i = 0; i < TABLE_SIZE; i++) {
+        ht->capacity = capacity;
+
+        for (int i = 0; i < capacity; i++) {
                 ht->table[i] = NULL;
         }
         // ht->size = size;
@@ -24,7 +26,7 @@ HashTable *createTable() {
 }
 
 // Hash
-int Hash(char *key) {
+int Hash(char *key, int capacity) {
         unsigned int hash = 0;
         while (*key != '\0') {
                 hash = (hash << 5) + *key++;
@@ -32,12 +34,12 @@ int Hash(char *key) {
 
         // printf("address: %d\n", hash% TABLE_SIZE);
 
-        return hash % TABLE_SIZE;
+        return hash % capacity;
 }
 
 // Set
 void Set(HashTable *ht, char *key, char *value) {
-        int address = Hash(key);
+        int address = Hash(key, ht->capacity);
 
         Entry *entry = ht->table[address];
 
@@ -86,7 +88,7 @@ void Set(HashTable *ht, char *key, char *value) {
 
 // Get
 char *Get(HashTable *ht, char *key) {
-        int address = Hash(key);
+        int address = Hash(key, ht->capacity);
         // printf("address: %d\n", address);
         // printf("get key: %s\n",key);
 
@@ -110,7 +112,7 @@ char *Get(HashTable *ht, char *key) {
 // Keys
 void PrintKeys(HashTable *ht) {
         printf("Keys:\n");
-        for (int i = 0; i < TABLE_SIZE; i++) {
+        for (int i = 0; i < ht->capacity; i++) {
                 Entry *entry = ht->table[i];
                 if (entry == NULL) {
                         continue;
@@ -126,7 +128,7 @@ void PrintKeys(HashTable *ht) {
 // CleanUp
 void CleanUp(HashTable *ht) {
 
-        for (int i = 0; i < TABLE_SIZE; i++) {
+        for (int i = 0; i < ht->capacity; i++) {
                 Entry *entry = ht->table[i];
                 if (entry == NULL) {
                         continue;
@@ -143,7 +145,7 @@ void CleanUp(HashTable *ht) {
         free(ht);
 }
 
-void delete(char *key) {
-        printf("Needs Implementation");
-        exit(-1);
-}
+// void delete(char *key) {
+//         printf("Needs Implementation");
+//         exit(-1);
+// }

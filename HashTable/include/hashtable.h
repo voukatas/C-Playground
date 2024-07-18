@@ -7,8 +7,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define TABLE_SIZE 100
-
 // Entry struct
 typedef struct Entry {
         char *Key;
@@ -19,12 +17,12 @@ typedef struct Entry {
 
 // HashTable
 typedef struct HashTable {
-        int size;
+        int capacity;
         Entry **table;
 } HashTable;
 
-HashTable *createTable();
-int Hash(char *key);
+HashTable *createTable(int capacity);
+int Hash(char *key, int capacity);
 void Set(HashTable *ht, char *key, char *value);
 char *Get(HashTable *ht, char *key);
 void PrintKeys(HashTable *ht);
