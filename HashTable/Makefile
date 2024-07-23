@@ -1,12 +1,11 @@
 CC = gcc
-CFLAGS = -Iunity -Isrc -Iinclude -Wall -Wextra -Werror -g
-OPTIMIZED_FLAGS = -Isrc -Iinclude -Wall -Wextra -Werror -O2 -s
-SRC = $(wildcard src/*.c)
+CFLAGS = -Iunity -Iinclude -Wall -Wextra -Werror -g
+OPTIMIZED_FLAGS = -Iinclude -Wall -Wextra -Werror -O2 -s
+APP_SRC = $(wildcard src/*.c)
 TEST_SRC = $(wildcard test/*.c) $(wildcard unity/*.c)
 
-APP_SRC = $(filter-out src/test_app.c, $(SRC))
 APP_OBJ = $(APP_SRC:.c=.o)
-TEST_APP_SRC = $(filter-out src/main.c, $(SRC))
+TEST_APP_SRC = $(filter-out src/main.c, $(APP_SRC))
 TEST_OBJ = $(TEST_SRC:.c=.o) $(patsubst src/%.c,test_obj/%.o,$(TEST_APP_SRC))
 
 OPTIMIZED_OBJ = $(APP_SRC:.c=.optimized.o)
@@ -15,7 +14,7 @@ APP_TARGET = hashtable_dbg
 TEST_TARGET = test_app
 OPTIMIZED_TARGET = hashtable_prod
 
-all: $(APP_TARGET) $(TEST_TARGET)
+all: $(APP_TARGET) $(TEST_TARGET) $(OPTIMIZED_TARGET)
 
 # Create the application binary
 $(APP_TARGET): $(APP_OBJ)
