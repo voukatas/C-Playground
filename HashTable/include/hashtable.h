@@ -8,24 +8,24 @@
 #include <string.h>
 
 // Entry struct
-typedef struct Entry {
-        char *Key;
-        char *Value;
-        struct Entry *Next;
+typedef struct entry {
+        char *key;
+        char *value;
+        struct entry *next;
 
-} Entry;
+} entry_t;
 
 // HashTable
-typedef struct HashTable {
+typedef struct hash_table {
         int capacity;
-        Entry **table;
-} HashTable;
+        entry_t **table;
+} hash_table_t;
 
-HashTable *createTable(int capacity);
-int Hash(char *key, int capacity);
-void Set(HashTable *ht, char *key, char *value);
-char *Get(HashTable *ht, char *key);
-void PrintKeys(HashTable *ht);
-void CleanUp(HashTable *ht);
+hash_table_t *create_table(int capacity);
+int hash(char *key, int capacity);
+int set_value(hash_table_t *ht, char *key, char *value);
+char *get_value(hash_table_t *ht, char *key);
+void print_keys(hash_table_t *ht);
+void clean_up(hash_table_t *ht);
 
 #endif
