@@ -18,6 +18,7 @@ typedef struct entry {
 // HashTable
 typedef struct hash_table {
         int capacity;
+        int size;
         entry_t **table;
 } hash_table_t;
 
@@ -27,5 +28,7 @@ int set_value(hash_table_t *ht, char *key, char *value);
 char *get_value(hash_table_t *ht, char *key);
 void print_keys(hash_table_t *ht);
 void clean_up(hash_table_t *ht);
+int delete_entry(hash_table_t *ht, char *key);
+int resize(hash_table_t *ht);
 
 #endif

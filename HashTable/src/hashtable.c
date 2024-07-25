@@ -21,11 +21,11 @@ hash_table_t *create_table(int capacity) {
         }
 
         ht->capacity = capacity;
+        ht->size = 0;
 
         for (int i = 0; i < capacity; i++) {
                 ht->table[i] = NULL;
         }
-        // ht->size = size;
 
         return ht;
 }
@@ -58,7 +58,7 @@ int set_value(hash_table_t *ht, char *key, char *value) {
                                        strerror(errno));
                                 return -1;
                         }
-                        return 0;
+                        return 0; // Success
                 }
                 entry = entry->next;
         }
@@ -76,11 +76,13 @@ int set_value(hash_table_t *ht, char *key, char *value) {
                 free(entry->key);
                 free(entry->value);
                 free(entry);
-                return -1;
+                return -1; // Error
         }
 
         entry->next = ht->table[address];
         ht->table[address] = entry;
+
+        ht->size++;
 
         return 0;
 }
@@ -88,15 +90,7 @@ int set_value(hash_table_t *ht, char *key, char *value) {
 // Get
 char *get_value(hash_table_t *ht, char *key) {
         int address = hash(key, ht->capacity);
-        // printf("address: %d\n", address);
-        // printf("get key: %s\n",key);
-
         entry_t *entry = ht->table[address];
-        // printf("get entry: %p\n",entry);
-
-        // if( entry == NULL) {
-        // 	return NULL;
-        // }
 
         while (entry != NULL) {
                 if (strcmp(entry->key, key) == 0) {
@@ -107,6 +101,46 @@ char *get_value(hash_table_t *ht, char *key) {
 
         return NULL;
 }
+
+int delete_entry(hash_table_t *ht, char *key) {
+        int address = hash(key, ht->capacity);
+
+        entry_t *current_entry = ht->table[address];
+        entry_t *prev_entry = NULL;
+
+        while (current_entry != NULL) {
+                if (strcmp(current_entry->key, key) == 0) {
+                        if (prev_entry == NULL) {
+                                ht->table[address] = current_entry->next;
+                        } else {
+                                prev_entry->next = current_entry->next;
+                        }
+                        free(current_entry->key);
+                        free(current_entry->value);
+                        free(current_entry);
+                        ht->size--;
+                        return 0; // Success
+                }
+                prev_entry = current_entry;
+                current_entry = current_entry->next;
+        }
+
+        return -1; // Key not found
+}
+
+// resize
+// int resize(hash_table_t *ht) {
+//         entry_t **resized_ptr = (entry_t **)realloc(
+//             ht->table, ht->capacity * 2 * sizeof(entry_t *));
+//         if (resized_ptr == NULL) {
+//                 printf("failed to re-allocate memory for table: %s\n",
+//                        strerror(errno));
+//                 return -1;
+//         }
+//         ht->table = resized_ptr;
+//
+//         return 0;
+// }
 
 // Keys
 void print_keys(hash_table_t *ht) {
@@ -143,8 +177,3 @@ void clean_up(hash_table_t *ht) {
         free(ht->table);
         free(ht);
 }
-
-// void delete(char *key) {
-//         printf("Needs Implementation");
-//         exit(-1);
-// }

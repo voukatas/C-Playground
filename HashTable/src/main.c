@@ -34,5 +34,7 @@ int main() {
 
         print_keys(ht);
 
+        // resize(ht);
+
         clean_up(ht);
 }
