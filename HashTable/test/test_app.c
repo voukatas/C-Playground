@@ -132,6 +132,61 @@ void test_delete_invalid_entry(void) {
         clean_up(ht);
 }
 
+void test_resize(void) {
+        int table_size = 4;
+        hash_table_t *ht = create_table(table_size);
+        char key1[] = "key1";
+        char key2[] = "key2";
+        char key3[] = "key3";
+        char key4[] = "key4";
+        char key5[] = "key5";
+        char val[] = "val";
+
+        // set the values and check that the size increased
+        set_value(ht, key1, val);
+        TEST_ASSERT_EQUAL_INT(1, ht->size);
+
+        set_value(ht, key2, val);
+        TEST_ASSERT_EQUAL_INT(2, ht->size);
+
+        set_value(ht, key3, val);
+        TEST_ASSERT_EQUAL_INT(3, ht->size);
+
+        set_value(ht, key4, val);
+        TEST_ASSERT_EQUAL_INT(4, ht->size);
+
+        set_value(ht, key5, val);
+        TEST_ASSERT_EQUAL_INT(5, ht->size);
+
+        // check that the capacity was increased
+        TEST_ASSERT_TRUE(ht->capacity > table_size);
+
+        // verify that the values still exist and they are spread in their
+        // position
+        char *res1 = get_value(ht, key1);
+        TEST_ASSERT_EQUAL_STRING(val, res1);
+        // TEST_ASSERT_EQUAL_STRING((ht->table[1])->key, key1);
+
+        char *res2 = get_value(ht, key2);
+        TEST_ASSERT_EQUAL_STRING(val, res2);
+        // TEST_ASSERT_EQUAL_STRING((ht->table[2])->key, key2);
+
+        char *res3 = get_value(ht, key3);
+        TEST_ASSERT_EQUAL_STRING(val, res3);
+        // TEST_ASSERT_EQUAL_STRING((ht->table[3])->key, key3);
+
+        char *res4 = get_value(ht, key4);
+        TEST_ASSERT_EQUAL_STRING(val, res4);
+        // TEST_ASSERT_EQUAL_STRING((ht->table[4])->key, key4);
+
+        char *res5 = get_value(ht, key5);
+        TEST_ASSERT_EQUAL_STRING(val, res5);
+        // TEST_ASSERT_EQUAL_STRING((ht->table[5])->key, key5);
+
+        print_keys(ht);
+        clean_up(ht);
+}
+
 int main(void) {
         UNITY_BEGIN();
         RUN_TEST(test_hashtable_with_capacity_one);
@@ -139,5 +194,6 @@ int main(void) {
         RUN_TEST(test_Set_malloc_fail);
         RUN_TEST(test_delete_entry);
         RUN_TEST(test_delete_invalid_entry);
+        RUN_TEST(test_resize);
         return UNITY_END();
 }

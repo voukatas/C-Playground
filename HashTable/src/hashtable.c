@@ -44,6 +44,14 @@ int hash(char *key, int capacity) {
 
 // Set
 int set_value(hash_table_t *ht, char *key, char *value) {
+        // printf("init size: %d\n", ht->size);
+        if (ht->size > (ht->capacity / 2)) {
+                // printf("size: %d cap: %d\n", ht->size, ht->capacity / 2);
+                int result = resize(ht);
+                if (result != 0) {
+                        return -1;
+                }
+        }
         int address = hash(key, ht->capacity);
 
         entry_t *entry = ht->table[address];
@@ -83,6 +91,7 @@ int set_value(hash_table_t *ht, char *key, char *value) {
         ht->table[address] = entry;
 
         ht->size++;
+        // printf("---increase size: %d\n", ht->size);
 
         return 0;
 }
@@ -129,18 +138,42 @@ int delete_entry(hash_table_t *ht, char *key) {
 }
 
 // resize
-// int resize(hash_table_t *ht) {
-//         entry_t **resized_ptr = (entry_t **)realloc(
-//             ht->table, ht->capacity * 2 * sizeof(entry_t *));
-//         if (resized_ptr == NULL) {
-//                 printf("failed to re-allocate memory for table: %s\n",
-//                        strerror(errno));
-//                 return -1;
-//         }
-//         ht->table = resized_ptr;
-//
-//         return 0;
-// }
+// Avoid the use of realloc here because you will end up reading and modifying
+// the same table...
+int resize(hash_table_t *ht) {
+        // printf("resize initiated\n");
+        int new_capacity_no = 2 * ht->capacity;
+        entry_t **new_table =
+            (entry_t **)malloc(new_capacity_no * sizeof(entry_t *));
+        if (new_table == NULL) {
+                printf("failed to allocate memory for new table: %s\n",
+                       strerror(errno));
+                return -1;
+        }
+
+        for (int i = 0; i < new_capacity_no; i++) {
+                new_table[i] = NULL;
+        }
+
+        // Re-hash
+        for (int i = 0; i < ht->capacity; i++) {
+                entry_t *entry = ht->table[i];
+                while (entry != NULL) {
+                        entry_t *next = entry->next;
+                        int address = hash(entry->key, new_capacity_no);
+                        entry->next = new_table[address];
+                        new_table[address] = entry;
+                        entry = next;
+                }
+        }
+
+        free(ht->table);
+        ht->table = new_table;
+        ht->capacity = new_capacity_no;
+
+        // printf("resize finished\n");
+        return 0;
+}
 
 // Keys
 void print_keys(hash_table_t *ht) {
@@ -152,7 +185,7 @@ void print_keys(hash_table_t *ht) {
                 }
 
                 while (entry != NULL) {
-                        printf("%s\n", entry->key);
+                        printf("position: %d key: %s\n", i, entry->key);
                         entry = entry->next;
                 }
         }
