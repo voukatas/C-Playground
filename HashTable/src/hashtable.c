@@ -1,3 +1,4 @@
+#include <pthread.h>
 #ifdef TESTING
 // #warning "TESTING macro is defined"
 #include "../include/mock_malloc.h"
@@ -5,7 +6,8 @@
 
 #include "../include/hashtable.h"
 
-// init table
+// pthread_mutex_t hash_table_mutex = PTHREAD_MUTEX_INITIALIZER;
+//  init table
 hash_table_t *create_table(int capacity) {
         hash_table_t *ht = malloc(sizeof(hash_table_t));
         if (!ht) {
@@ -27,6 +29,10 @@ hash_table_t *create_table(int capacity) {
                 ht->table[i] = NULL;
         }
 
+        if (pthread_mutex_init(&ht->hash_table_mutex, NULL) != 0) {
+                printf("Mutex init failed\n");
+                exit(EXIT_FAILURE);
+        }
         return ht;
 }
 
@@ -45,10 +51,12 @@ int hash(char *key, int capacity) {
 // Set
 int set_value(hash_table_t *ht, char *key, char *value) {
         // printf("init size: %d\n", ht->size);
+        pthread_mutex_lock(&ht->hash_table_mutex);
         if (ht->size > (ht->capacity / 2)) {
                 // printf("size: %d cap: %d\n", ht->size, ht->capacity / 2);
                 int result = resize(ht);
                 if (result != 0) {
+                        pthread_mutex_unlock(&ht->hash_table_mutex);
                         return -1;
                 }
         }
@@ -64,8 +72,10 @@ int set_value(hash_table_t *ht, char *key, char *value) {
                         if (!entry->value) {
                                 printf("failed to allocate memory: %s\n",
                                        strerror(errno));
+                                pthread_mutex_unlock(&ht->hash_table_mutex);
                                 return -1;
                         }
+                        pthread_mutex_unlock(&ht->hash_table_mutex);
                         return 0; // Success
                 }
                 entry = entry->next;
@@ -74,6 +84,7 @@ int set_value(hash_table_t *ht, char *key, char *value) {
         entry = malloc(sizeof(entry_t)); // consider also calloc
         if (!entry) {
                 printf("failed to allocate memory: %s\n", strerror(errno));
+                pthread_mutex_unlock(&ht->hash_table_mutex);
                 return -1;
         }
         entry->key = strdup(key);
@@ -84,6 +95,7 @@ int set_value(hash_table_t *ht, char *key, char *value) {
                 free(entry->key);
                 free(entry->value);
                 free(entry);
+                pthread_mutex_unlock(&ht->hash_table_mutex);
                 return -1; // Error
         }
 
@@ -92,26 +104,33 @@ int set_value(hash_table_t *ht, char *key, char *value) {
 
         ht->size++;
         // printf("---increase size: %d\n", ht->size);
+        pthread_mutex_unlock(&ht->hash_table_mutex);
 
         return 0;
 }
 
 // Get
 char *get_value(hash_table_t *ht, char *key) {
+        pthread_mutex_lock(&ht->hash_table_mutex);
+
         int address = hash(key, ht->capacity);
         entry_t *entry = ht->table[address];
 
         while (entry != NULL) {
                 if (strcmp(entry->key, key) == 0) {
+                        pthread_mutex_unlock(&ht->hash_table_mutex);
                         return entry->value;
                 }
                 entry = entry->next;
         }
 
+        pthread_mutex_unlock(&ht->hash_table_mutex);
         return NULL;
 }
 
 int delete_entry(hash_table_t *ht, char *key) {
+        pthread_mutex_lock(&ht->hash_table_mutex);
+
         int address = hash(key, ht->capacity);
 
         entry_t *current_entry = ht->table[address];
@@ -128,12 +147,14 @@ int delete_entry(hash_table_t *ht, char *key) {
                         free(current_entry->value);
                         free(current_entry);
                         ht->size--;
+                        pthread_mutex_unlock(&ht->hash_table_mutex);
                         return 0; // Success
                 }
                 prev_entry = current_entry;
                 current_entry = current_entry->next;
         }
 
+        pthread_mutex_unlock(&ht->hash_table_mutex);
         return -1; // Key not found
 }
 
@@ -177,6 +198,8 @@ int resize(hash_table_t *ht) {
 
 // Keys
 void print_keys(hash_table_t *ht) {
+        pthread_mutex_lock(&ht->hash_table_mutex);
+
         printf("Keys:\n");
         for (int i = 0; i < ht->capacity; i++) {
                 entry_t *entry = ht->table[i];
@@ -189,10 +212,12 @@ void print_keys(hash_table_t *ht) {
                         entry = entry->next;
                 }
         }
+        pthread_mutex_unlock(&ht->hash_table_mutex);
 }
 
 // CleanUp
 void clean_up(hash_table_t *ht) {
+        pthread_mutex_lock(&ht->hash_table_mutex);
 
         for (int i = 0; i < ht->capacity; i++) {
                 entry_t *entry = ht->table[i];
@@ -208,5 +233,7 @@ void clean_up(hash_table_t *ht) {
                 }
         }
         free(ht->table);
+        pthread_mutex_unlock(&ht->hash_table_mutex);
+        pthread_mutex_destroy(&ht->hash_table_mutex);
         free(ht);
 }

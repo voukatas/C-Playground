@@ -187,6 +187,121 @@ void test_resize(void) {
         clean_up(ht);
 }
 
+void *thread_func1(void *arg) {
+        hash_table_t *ht = (hash_table_t *)arg;
+        for (int i = 0; i < 1000; ++i) {
+                // pthread_mutex_lock(&counter_mutex);
+                // set_value(ht, "key1", "val1");
+                // pthread_mutex_unlock(&counter_mutex);
+                set_value(ht, "key1", "val1");
+        }
+        return NULL;
+}
+
+void *thread_func2(void *arg) {
+        hash_table_t *ht = (hash_table_t *)arg;
+        for (int i = 0; i < 1000; ++i) {
+                // pthread_mutex_lock(&counter_mutex);
+                // set_value(ht, "key2", "val1");
+                // pthread_mutex_unlock(&counter_mutex);
+                set_value(ht, "key1", "val1");
+        }
+        return NULL;
+}
+// consider deleting this...
+// check that valgrind doesn't report any data races
+void test_threading(void) {
+        int table_size = 4;
+        hash_table_t *ht = create_table(table_size);
+
+        pthread_t t1, t2;
+
+        pthread_create(&t1, NULL, thread_func1, ht);
+        pthread_create(&t2, NULL, thread_func2, ht);
+
+        pthread_join(t1, NULL);
+        pthread_join(t2, NULL);
+
+        print_keys(ht);
+        clean_up(ht);
+}
+
+// a little of mess here, probably i should use a different file
+#define NUM_THREADS 10
+#define NUM_OPERATIONS 1000 // 5000
+
+typedef struct thread_data {
+        hash_table_t *ht;
+        char key[32];
+        char value[32];
+} thread_data_t;
+
+void *thread_set_value(void *arg) {
+        thread_data_t *data = (thread_data_t *)arg;
+        for (int i = 0; i < NUM_OPERATIONS; i++) {
+                char key[64];
+                snprintf(key, sizeof(key), "%s_%d", data->key, i);
+                set_value(data->ht, key, data->value);
+        }
+        return NULL;
+}
+
+void *thread_get_value(void *arg) {
+        thread_data_t *data = (thread_data_t *)arg;
+        for (int i = 0; i < NUM_OPERATIONS; i++) {
+                char key[64];
+                snprintf(key, sizeof(key), "%s_%d", data->key, i);
+                get_value(data->ht, key);
+        }
+        return NULL;
+}
+
+void test_thread_safety(void) {
+        hash_table_t *ht = create_table(10);
+
+        pthread_t threads[NUM_THREADS];
+        thread_data_t thread_data[NUM_THREADS];
+
+        // create threads to set
+        for (int i = 0; i < NUM_THREADS / 2; i++) {
+                snprintf(thread_data[i].key, sizeof(thread_data[i].key),
+                         "key%d", i);
+                snprintf(thread_data[i].value, sizeof(thread_data[i].value),
+                         "value%d", i);
+                thread_data[i].ht = ht;
+                pthread_create(&threads[i], NULL, thread_set_value,
+                               (void *)&thread_data[i]);
+        }
+
+        // create threads to use get
+        for (int i = NUM_THREADS / 2; i < NUM_THREADS; i++) {
+                snprintf(thread_data[i].key, sizeof(thread_data[i].key),
+                         "key%d", i - NUM_THREADS / 2);
+                snprintf(thread_data[i].value, sizeof(thread_data[i].value),
+                         "value%d", i - NUM_THREADS / 2);
+                thread_data[i].ht = ht;
+                pthread_create(&threads[i], NULL, thread_get_value,
+                               (void *)&thread_data[i]);
+        }
+
+        for (int i = 0; i < NUM_THREADS; i++) {
+                pthread_join(threads[i], NULL);
+        }
+
+        // verify the values
+        for (int i = 0; i < NUM_THREADS / 2; i++) {
+                for (int j = 0; j < NUM_OPERATIONS; j++) {
+                        char key[32];
+                        snprintf(key, sizeof(key), "key%d_%d", i, j);
+                        char *value = get_value(ht, key);
+                        TEST_ASSERT_EQUAL_STRING(thread_data[i].value, value);
+                }
+        }
+
+        // print_keys(ht);
+        clean_up(ht);
+}
+
 int main(void) {
         UNITY_BEGIN();
         RUN_TEST(test_hashtable_with_capacity_one);
@@ -195,5 +310,7 @@ int main(void) {
         RUN_TEST(test_delete_entry);
         RUN_TEST(test_delete_invalid_entry);
         RUN_TEST(test_resize);
+        RUN_TEST(test_threading);
+        RUN_TEST(test_thread_safety);
         return UNITY_END();
 }

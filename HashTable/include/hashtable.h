@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 
 // Entry struct
 typedef struct entry {
@@ -20,6 +21,7 @@ typedef struct hash_table {
         int capacity;
         int size;
         entry_t **table;
+        pthread_mutex_t hash_table_mutex;
 } hash_table_t;
 
 hash_table_t *create_table(int capacity);

@@ -1,6 +1,17 @@
 CC = gcc
-CFLAGS = -Iunity -Iinclude -Wall -Wextra -Werror -g
-OPTIMIZED_FLAGS = -Iinclude -Wall -Wextra -Werror -O2 -s
+# Regular flags
+# CFLAGS = -Iunity -Iinclude -Wall -Wextra -Werror -g
+# OPTIMIZED_FLAGS = -Iinclude -Wall -Wextra -Werror -O2 -s
+#
+# Flags to check for race conditions
+# You might need this in order to run properly
+# sudo sysctl vm.mmap_rnd_bits=28
+#CFLAGS = -Iunity -Iinclude -Wall -Wextra -Werror -g -pthread -fsanitize=thread
+CFLAGS = -Iunity -Iinclude -Wall -Wextra -Werror -g -pthread
+OPTIMIZED_FLAGS = -Iinclude -Wall -Wextra -Werror -O2 -s -pthread
+#
+# Flags to check for memory issues
+#CFLAGS = -Iunity -Iinclude -Wall -Wextra -Werror -g -pthread  -fsanitize=address
 APP_SRC = $(wildcard src/*.c)
 TEST_SRC = $(wildcard test/*.c) $(wildcard unity/*.c)
 
