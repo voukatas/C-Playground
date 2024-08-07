@@ -36,11 +36,14 @@ hash_table_t *create_table(int capacity) {
         return ht;
 }
 
-// Hash
+// Hash djb2
 int hash(char *key, int capacity) {
-        unsigned int hash = 0;
-        while (*key != '\0') {
-                hash = (hash << 5) + *key++;
+
+        unsigned long hash = 5381;
+        int c;
+
+        while ((c = *key++)) {
+                hash = ((hash << 5) + hash) + c; // hash * 33 + c
         }
 
         // printf("address: %d\n", hash% TABLE_SIZE);
@@ -52,7 +55,7 @@ int hash(char *key, int capacity) {
 int set_value(hash_table_t *ht, char *key, char *value) {
         // printf("init size: %d\n", ht->size);
         pthread_mutex_lock(&ht->hash_table_mutex);
-        if (ht->size > (ht->capacity / 2)) {
+        if (ht->size >= (ht->capacity * 0.75)) {
                 // printf("size: %d cap: %d\n", ht->size, ht->capacity / 2);
                 int result = resize(ht);
                 if (result != 0) {
