@@ -31,7 +31,7 @@ void test_add_and_clean_client(void) {
                 close(client_fd);
                 return;
         }
-        printf("Accepted client socket 1\n");
+        // printf("Accepted client socket 1\n");
 
         client->fd = client_fd;
         client->buffer_len = 0;
@@ -61,7 +61,7 @@ void test_add_and_remove_client(void) {
                 close(client_fd);
                 return;
         }
-        printf("Accepted client socket 1\n");
+        // printf("Accepted client socket 1\n");
 
         client->fd = client_fd;
         client->buffer_len = 0;
@@ -80,14 +80,15 @@ void test_add_and_remove_client(void) {
 void *run_server_thread(void *arg) {
         int *port = (int *)arg;
         run_server(*port);
+        // run_server(*port, 3, 1);
         return NULL;
 }
 
-void send_client_msg(char *msg, int port, char *ip) {
+int connect_client(int port, char *ip) {
 
         int sockfd;
         struct sockaddr_in server_addr;
-        char buffer[BUFFER_SIZE];
+        // char buffer[BUFFER_SIZE];
 
         sockfd = socket(AF_INET, SOCK_STREAM, 0);
         if (sockfd < 0) {
@@ -110,14 +111,29 @@ void send_client_msg(char *msg, int port, char *ip) {
                 exit(EXIT_FAILURE);
         }
 
-        // sleep(2);
+        return sockfd;
+}
+
+void disconnect_client(int sockfd) {
+
+        close(sockfd);
+}
+
+void connect_disconnect_client(int port, char *ip) {
+        int sockfd = connect_client(port, ip);
+        disconnect_client(sockfd);
+}
+
+void send_client_msg(char *msg, int port, char *ip) {
+
+        char buffer[BUFFER_SIZE];
+        int sockfd = connect_client(port, ip);
+
         if (send(sockfd, msg, strlen(msg), 0) < 0) {
                 perror("Send failed");
                 close(sockfd);
                 exit(EXIT_FAILURE);
         }
-        printf("Message sent to server: %s\n", msg);
-        // sleep(2);
 
         int bytes_received = read(sockfd, buffer, sizeof(buffer));
         if (bytes_received < 0) {
@@ -126,40 +142,78 @@ void send_client_msg(char *msg, int port, char *ip) {
                 exit(EXIT_FAILURE);
         }
         buffer[bytes_received] = '\0';
-        printf("Response from server: %s\n", buffer);
-        // sleep(2);
+        // printf("Msg rcvd: %s", buffer);
+        TEST_ASSERT_EQUAL_STRING("Hello World from Server\n", buffer);
 
-        close(sockfd);
+        disconnect_client(sockfd);
+        // close(sockfd);
 }
 
 void test_run_server_initialization(void) {
+        handle_shutdown_signal(1);
         pthread_t server_thread;
         int port = 8080;
 
         pthread_create(&server_thread, NULL, run_server_thread, &port);
 
-        // do some work here
+        // Small delay for server to init
         sleep(1);
-        printf("Hello from the test_run_server_initialization\n");
-        send_client_msg("Hello World!\n", port, "127.0.0.1");
+        send_client_msg("Hello from client\n", port, "127.0.0.1");
         // To shutdown the event loop
-        handle_signal();
+        handle_shutdown_signal(0);
+        connect_disconnect_client(port, "127.0.0.1");
 
         pthread_join(server_thread, NULL);
-
-        // Assertions here
-        // TEST_ASSERT_EQUAL(EXIT_SUCCESS, result);
 }
 
+// Placeholder, finish this test after the text-based protocol is finished. This
+// covers the branch of code where a node-client from the middle of the linked
+// list is removed
+void test_run_server_multiple_clients(void) {
+        handle_shutdown_signal(1);
+        pthread_t server_thread;
+        int port = 8081;
+        char *ip = "127.0.0.1";
+
+        pthread_create(&server_thread, NULL, run_server_thread, &port);
+
+        // Small delay for server to init
+        sleep(1);
+
+        // Test scenario
+        connect_client(port, ip);
+        // send_client_msg("Hello from client\n", port, ip);
+        int sockfd2 = connect_client(port, ip);
+        connect_client(port, ip);
+        // Verify that the num of clients is 3 using some text-based command
+        /*
+         * Write test code here
+         * */
+
+        disconnect_client(sockfd2);
+        // Verify that the num of clients is 2 using some text-based command
+        /*
+         * Write test code here
+         * */
+
+        sleep(1);
+        //  To shutdown the event loop
+        handle_shutdown_signal(0);
+        connect_disconnect_client(port, "127.0.0.1");
+
+        pthread_join(server_thread, NULL);
+}
 // To-Do
 void test_handle_client_read_and_write(void) {
 }
 
 int main(void) {
         UNITY_BEGIN();
-        // RUN_TEST(test_add_and_remove_client);
-        // RUN_TEST(test_add_and_clean_client);
+        RUN_TEST(test_add_and_remove_client);
+        RUN_TEST(test_add_and_clean_client);
         RUN_TEST(test_run_server_initialization);
-        // RUN_TEST(test_handle_client_read_and_write);
+        RUN_TEST(test_run_server_multiple_clients);
+
+        //  RUN_TEST(test_handle_client_read_and_write);
         return UNITY_END();
 }

@@ -13,6 +13,7 @@ void add_client_to_list(client_node_t **head, node_data_t *client_data) {
 
 // Remove client from the linked list
 void remove_client_from_list(client_node_t **head, node_data_t *client_data) {
+        printf("remove_client triggered\n");
         client_node_t *current = *head;
         client_node_t *prev = NULL;
 
@@ -39,12 +40,18 @@ void remove_client_from_list(client_node_t **head, node_data_t *client_data) {
 }
 
 void cleanup_all_clients(client_node_t *head) {
+        printf("Cleanup Triggered\n");
         client_node_t *current = head;
         while (current) {
                 client_node_t *next = current->next;
-                close(current->client_data->data.client->fd);
-                free(current->client_data->data.client);
-                current->client_data->data.client = NULL;
+                if (current->client_data && current->client_data->data.client) {
+                        close(current->client_data->data.client->fd);
+                        free(current->client_data->data.client);
+                        current->client_data->data.client = NULL;
+                }
+                // close(current->client_data->data.client->fd);
+                // free(current->client_data->data.client);
+                // current->client_data->data.client = NULL;
                 free(current->client_data);
                 current->client_data = NULL;
                 free(current);
@@ -61,7 +68,7 @@ void handle_client_read(client_t *client, struct epoll_event *ev,
         if (bytes_read > 0) {
                 printf("Received message: %.*s\n", bytes_read, buffer);
 
-                const char *response = "Hello World\n";
+                const char *response = "Hello World from Server\n";
                 snprintf(client->buffer, sizeof(client->buffer), "%s",
                          response);
                 client->buffer_len = strlen(client->buffer);
@@ -71,7 +78,8 @@ void handle_client_read(client_t *client, struct epoll_event *ev,
                 // calls Changing the flags on what epoll should monitor, avoids
                 // unwanted/random events to be triggered sporadically and makes
                 // the system more robust
-                ev->events = EPOLLOUT | EPOLLET;
+                ev->events =
+                    EPOLLOUT | EPOLLET | EPOLLHUP | EPOLLERR | EPOLLRDHUP;
                 if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, client->fd, ev) == -1) {
                         perror("Epoll ctl mod failed");
                         if (epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client->fd,
@@ -153,7 +161,7 @@ void handle_client_write(client_t *client, struct epoll_event *ev,
         }
 
         // Stop monitoring for writable events
-        ev->events = EPOLLIN | EPOLLET;
+        ev->events = EPOLLIN | EPOLLET | EPOLLHUP | EPOLLERR | EPOLLRDHUP;
         if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, client->fd, ev) == -1) {
                 perror("Epoll ctl mod failed");
                 if (epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client->fd, NULL) ==

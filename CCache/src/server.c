@@ -14,7 +14,7 @@ void set_non_blocking(int socket) {
         fcntl(socket, F_SETFL, flags | O_NONBLOCK);
 }
 
-int setup_server_socket(int port) {
+static int setup_server_socket(int port) {
         int server_fd; //, client_socket;
         struct sockaddr_in address = {0};
 
@@ -56,7 +56,7 @@ int setup_server_socket(int port) {
         return server_fd;
 }
 
-int setup_epoll(int server_fd) {
+static int setup_epoll(int server_fd) {
         int epoll_fd = epoll_create1(0); // a kernel obj that keeps track of
                                          // multiple fds and notifies on events
         if (epoll_fd == -1) {
@@ -90,7 +90,7 @@ int setup_epoll(int server_fd) {
         return epoll_fd;
 }
 
-void handle_event(int epoll_fd, struct epoll_event *event) {
+static void handle_event(int epoll_fd, struct epoll_event *event) {
         struct sockaddr_in address;
         int addrlen = sizeof(address);
         node_data_t *event_data = (node_data_t *)event->data.ptr;
@@ -114,7 +114,6 @@ void handle_event(int epoll_fd, struct epoll_event *event) {
                         close(client_socket);
                         return;
                 }
-                printf("Accepted client socket 1\n");
 
                 client->fd = client_socket;
                 client->buffer_len = 0;
@@ -131,11 +130,11 @@ void handle_event(int epoll_fd, struct epoll_event *event) {
                 client_event->node_type = 1;
                 client_event->data.client = client;
 
-                printf("Accepted client socket 2\n");
-
                 // Add the client socket to epoll
                 struct epoll_event ev;
-                ev.events = EPOLLIN | EPOLLET;
+                // ev.events = EPOLLIN | EPOLLET;
+                ev.events =
+                    EPOLLIN | EPOLLET | EPOLLHUP | EPOLLERR | EPOLLRDHUP;
                 ev.data.ptr = client_event;
                 if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client_socket, &ev) ==
                     -1) {
@@ -148,16 +147,15 @@ void handle_event(int epoll_fd, struct epoll_event *event) {
                         return;
                 }
 
-                printf("Accepted client socket 3\n");
-
                 // Add client to the linked list for cleanup on
                 // shutdown
                 add_client_to_list(&client_list_head, client_event);
-                printf("added client %p\n", client);
+                printf("Added Client: %p\n", client);
         } else {
-                // Handle client disconnect or error
+
                 client_t *client = event_data->data.client;
 
+                //  Handle client disconnect or error
                 if (event->events & (EPOLLHUP | EPOLLERR | EPOLLRDHUP)) {
                         printf("Disconnect event for %p\n",
                                event_data->data.client);
@@ -189,7 +187,8 @@ void handle_event(int epoll_fd, struct epoll_event *event) {
 }
 
 int run_server(int port) {
-        // Set up signal handling
+        // int run_server(int port, int max_iterations, int test_mode) {
+        //  Set up signal handling
         setup_signal_handling();
         int server_fd = setup_server_socket(port);
         int epoll_fd = setup_epoll(server_fd);
@@ -198,8 +197,14 @@ int run_server(int port) {
 
         struct epoll_event events[MAX_EVENTS];
 
+        // int iterations = 0;
+        // int test = atomic_load(&keep_running);
+        // printf("keep running = %d\n", test);
+        // printf("address of keep_running: %p\n", &keep_running);
         // Event Loop
-        while (keep_running) {
+        while (atomic_load(&keep_running)) {
+                //  &&
+                // (!test_mode || iterations < max_iterations)) {
                 int nfds = epoll_wait(
                     epoll_fd, events, MAX_EVENTS,
                     -1); // returns as soon as an event occurs, no delay
@@ -215,6 +220,7 @@ int run_server(int port) {
                 for (int i = 0; i < nfds; ++i) {
                         handle_event(epoll_fd, &events[i]);
                 }
+                // iterations++;
         }
         // Cleanup on shutdown
         cleanup_all_clients(client_list_head);
@@ -222,5 +228,6 @@ int run_server(int port) {
         server_event = NULL;
         close(epoll_fd);
         close(server_fd);
+        printf("SERVER STOPED!\n");
         return 0;
 }

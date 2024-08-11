@@ -3,9 +3,11 @@
 
 #include <signal.h>
 #include <stdlib.h>
+#include <stdatomic.h>
 
-void handle_signal();
+void handle_shutdown_signal(int state);
 void setup_signal_handling(void);
-extern volatile sig_atomic_t keep_running;
+extern atomic_int keep_running;
+//extern volatile sig_atomic_t keep_running;
 
 #endif // SIGNAL_HANDLER_H
