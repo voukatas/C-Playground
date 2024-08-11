@@ -1,6 +1,7 @@
 #include "../include/client.h"
 
 void add_client_to_list(client_node_t **head, node_data_t *client_data) {
+        // printf("add client to list head: %p\n", *head);
         client_node_t *new_node = malloc(sizeof(client_node_t));
         if (!new_node) {
                 perror("malloc failed");
@@ -9,29 +10,38 @@ void add_client_to_list(client_node_t **head, node_data_t *client_data) {
         new_node->client_data = client_data;
         new_node->next = *head;
         *head = new_node;
+        // printf("add client to list head is now: %p\n", *head);
 }
 
 // Remove client from the linked list
 void remove_client_from_list(client_node_t **head, node_data_t *client_data) {
-        printf("remove_client triggered\n");
+        // printf("remove_client triggered\n");
+        // printf("remove_client triggered head: %p\n", *head);
         client_node_t *current = *head;
         client_node_t *prev = NULL;
 
         while (current != NULL) {
                 if (current->client_data == client_data) {
+                        // printf("remove_client head: %p\n", *head);
+                        // printf("remove_client prev: %p\n", prev);
                         if (prev == NULL) {
                                 *head = current->next;
                         } else {
                                 prev->next = current->next;
                         }
-                        close(current->client_data->data.client->fd);
-                        free(current->client_data->data.client);
-                        current->client_data->data.client = NULL;
-                        free(current->client_data);
-                        current->client_data = NULL;
+                        if (current->client_data &&
+                            current->client_data->data.client) {
+                                close(current->client_data->data.client->fd);
+                                free(current->client_data->data.client);
+                                current->client_data->data.client = NULL;
+                        }
+                        if (current->client_data) {
+                                free(current->client_data);
+                                current->client_data = NULL;
+                                current->next = NULL;
+                        }
                         free(current);
                         current = NULL;
-                        // free(current);
                         return;
                 }
                 prev = current;
@@ -39,25 +49,28 @@ void remove_client_from_list(client_node_t **head, node_data_t *client_data) {
         }
 }
 
-void cleanup_all_clients(client_node_t *head) {
+void cleanup_all_clients(client_node_t **head) {
         printf("Cleanup Triggered\n");
-        client_node_t *current = head;
+        // printf("Cleanup Triggered head: %p\n", *head);
+        client_node_t *current = *head;
+        // printf("----------------------- current address: %p\n", current);
         while (current) {
                 client_node_t *next = current->next;
+                // printf("------------------ next address: %p\n", next);
                 if (current->client_data && current->client_data->data.client) {
                         close(current->client_data->data.client->fd);
                         free(current->client_data->data.client);
                         current->client_data->data.client = NULL;
                 }
-                // close(current->client_data->data.client->fd);
-                // free(current->client_data->data.client);
-                // current->client_data->data.client = NULL;
-                free(current->client_data);
-                current->client_data = NULL;
+                if (current->client_data) {
+                        free(current->client_data);
+                        current->client_data = NULL;
+                        current->next = NULL;
+                }
                 free(current);
-                current = NULL;
                 current = next;
         }
+        *head = NULL;
 }
 
 void handle_client_read(client_t *client, struct epoll_event *ev,

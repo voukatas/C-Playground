@@ -19,7 +19,7 @@ typedef struct client_node {
 
 void add_client_to_list(client_node_t **head, node_data_t *client_data);
 void remove_client_from_list(client_node_t **head, node_data_t *client_data);
-void cleanup_all_clients(client_node_t *head);
+void cleanup_all_clients(client_node_t **head);
 void handle_client_read(client_t *client, struct epoll_event *ev, int epoll_fd);
 void handle_client_write(client_t *client, struct epoll_event *ev, int epoll_fd);
 

@@ -43,7 +43,7 @@ void test_add_and_clean_client(void) {
         TEST_ASSERT_NOT_NULL(head);
         TEST_ASSERT_EQUAL_PTR(head->client_data, client_data);
 
-        cleanup_all_clients(head);
+        cleanup_all_clients(&head);
 }
 
 void test_add_and_remove_client(void) {
@@ -121,6 +121,7 @@ void disconnect_client(int sockfd) {
 
 void connect_disconnect_client(int port, char *ip) {
         int sockfd = connect_client(port, ip);
+        // connect_client(port, ip);
         disconnect_client(sockfd);
 }
 
@@ -160,6 +161,7 @@ void test_run_server_initialization(void) {
         sleep(1);
         send_client_msg("Hello from client\n", port, "127.0.0.1");
         // To shutdown the event loop
+        sleep(1);
         handle_shutdown_signal(0);
         connect_disconnect_client(port, "127.0.0.1");
 

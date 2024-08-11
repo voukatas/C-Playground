@@ -223,7 +223,7 @@ int run_server(int port) {
                 // iterations++;
         }
         // Cleanup on shutdown
-        cleanup_all_clients(client_list_head);
+        cleanup_all_clients(&client_list_head);
         free(server_event);
         server_event = NULL;
         close(epoll_fd);
