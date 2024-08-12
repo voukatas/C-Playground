@@ -34,9 +34,10 @@ void test_add_and_clean_client(void) {
         // printf("Accepted client socket 1\n");
 
         client->fd = client_fd;
-        client->buffer_len = 0;
-        client->buffer_pos = 0;
         client_data->data.client = client;
+        client->read_buffer_len = 0;
+        client->write_buffer_len = 0;
+        client->write_buffer_pos = 0;
         // close(current->client_data->data.client->fd);
 
         add_client_to_list(&head, client_data);
@@ -64,9 +65,10 @@ void test_add_and_remove_client(void) {
         // printf("Accepted client socket 1\n");
 
         client->fd = client_fd;
-        client->buffer_len = 0;
-        client->buffer_pos = 0;
         client_data->data.client = client;
+        client->read_buffer_len = 0;
+        client->write_buffer_len = 0;
+        client->write_buffer_pos = 0;
         // close(current->client_data->data.client->fd);
 
         add_client_to_list(&head, client_data);
@@ -136,6 +138,13 @@ void send_client_msg(char *msg, int port, char *ip) {
                 exit(EXIT_FAILURE);
         }
 
+        // sleep(10);
+        // if (send(sockfd, "Another message\r\n", strlen(msg), 0) < 0) {
+        //         perror("Send failed");
+        //         close(sockfd);
+        //         exit(EXIT_FAILURE);
+        // }
+
         int bytes_received = read(sockfd, buffer, sizeof(buffer));
         if (bytes_received < 0) {
                 perror("Receive failed");
@@ -144,7 +153,7 @@ void send_client_msg(char *msg, int port, char *ip) {
         }
         buffer[bytes_received] = '\0';
         // printf("Msg rcvd: %s", buffer);
-        TEST_ASSERT_EQUAL_STRING("Hello World from Server\n", buffer);
+        TEST_ASSERT_EQUAL_STRING("Hello World from Server\r\n", buffer);
 
         disconnect_client(sockfd);
         // close(sockfd);
@@ -159,7 +168,7 @@ void test_run_server_initialization(void) {
 
         // Small delay for server to init
         sleep(1);
-        send_client_msg("Hello from client\n", port, "127.0.0.1");
+        send_client_msg("Hello from client\r\n", port, "127.0.0.1");
         // To shutdown the event loop
         sleep(1);
         handle_shutdown_signal(0);
@@ -174,7 +183,7 @@ void test_run_server_initialization(void) {
 void test_run_server_multiple_clients(void) {
         handle_shutdown_signal(1);
         pthread_t server_thread;
-        int port = 8081;
+        int port = 8080;
         char *ip = "127.0.0.1";
 
         pthread_create(&server_thread, NULL, run_server_thread, &port);

@@ -5,10 +5,13 @@
 #include <unistd.h>
 
 typedef struct {
-        int fd;
-        char buffer[BUFFER_SIZE];
-        size_t buffer_len;
-        size_t buffer_pos;
+    int fd;
+    char read_buffer[BUFFER_SIZE];
+    int read_buffer_len;
+    char write_buffer[BUFFER_SIZE];
+    int write_buffer_len;
+    int write_buffer_pos;
+    int close_after_write;
 } client_t;
 
 typedef struct {
