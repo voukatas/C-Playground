@@ -9,7 +9,9 @@
 #include "../include/signal_handler.h"
 
 client_node_t *client_list_head = NULL;
+int active_connections = 0;
 node_data_t *server_event = NULL;
+hash_table_t *hash_table_main = NULL;
 
 void set_non_blocking(int socket) {
     int flags = fcntl(socket, F_GETFL, 0);
@@ -174,6 +176,9 @@ static void handle_event(int epoll_fd, struct epoll_event *event) {
 }
 
 int run_server(int port) {
+    active_connections = 0;
+    // Create hashtable
+    hash_table_main = create_table(1000);
     //  Set up signal handling
     setup_signal_handling();
     int server_fd = setup_server_socket(port);
@@ -207,5 +212,8 @@ int run_server(int port) {
     server_event = NULL;
     close(epoll_fd);
     close(server_fd);
+    clean_up(hash_table_main);
+    active_connections = 0;
+    printf("SERVER STOPPED\n");
     return 0;
 }

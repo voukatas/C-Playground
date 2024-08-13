@@ -8,6 +8,7 @@
 #include <string.h>
 #include <sys/epoll.h>
 #include "common.h"
+#include "hashtable.h"
 
 
 // Unfortunatelly we need to maintain a ds to keep track of all the connected
@@ -25,5 +26,7 @@ void handle_client_write(client_t *client, struct epoll_event *ev, int epoll_fd)
 void delete_resources(int epoll_fd, client_t *client, struct epoll_event *ev);
 
 extern client_node_t *client_list_head;
+extern int active_connections;
+extern hash_table_t *hash_table_main;
 
 #endif // CLIENT_H
