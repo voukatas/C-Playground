@@ -135,7 +135,6 @@ static void handle_event(int epoll_fd, struct epoll_event *event) {
 
         // Add the client socket to epoll
         struct epoll_event ev;
-        // ev.events = EPOLLIN | EPOLLET;
         ev.events =
             EPOLLIN | EPOLLET | EPOLLET | EPOLLHUP | EPOLLERR | EPOLLRDHUP;
         ev.data.ptr = client_event;
@@ -149,8 +148,7 @@ static void handle_event(int epoll_fd, struct epoll_event *event) {
             return;
         }
 
-        // Add client to the linked list for cleanup on
-        // shutdown
+        // Add client to the linked list for cleanup on shutdown
         add_client_to_list(&client_list_head, client_event);
         printf("Added Client: %p\n", client);
     } else {
@@ -159,18 +157,7 @@ static void handle_event(int epoll_fd, struct epoll_event *event) {
         //  Handle client disconnect or error
         if (event->events & (EPOLLHUP | EPOLLERR | EPOLLRDHUP)) {
             printf("Disconnect event for %p\n", event_data->data.client);
-            // Remove the FD from epoll
-            if (epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client->fd, NULL) == -1) {
-                perror(
-                    "epoll_ctl: "
-                    "EPOLL_CTL_DEL failed");
-            }
-            // close(client->fd);
-            // free(client);
-            // client = NULL;
-            remove_client_from_list(&client_list_head, event_data);
-            // free(event_data);
-            // event_data = NULL;
+            delete_resources(epoll_fd, client, event);
             return;
         }
 
@@ -187,7 +174,6 @@ static void handle_event(int epoll_fd, struct epoll_event *event) {
 }
 
 int run_server(int port) {
-    // int run_server(int port, int max_iterations, int test_mode) {
     //  Set up signal handling
     setup_signal_handling();
     int server_fd = setup_server_socket(port);
@@ -197,14 +183,8 @@ int run_server(int port) {
 
     struct epoll_event events[MAX_EVENTS];
 
-    // int iterations = 0;
-    // int test = atomic_load(&keep_running);
-    // printf("keep running = %d\n", test);
-    // printf("address of keep_running: %p\n", &keep_running);
     // Event Loop
     while (atomic_load(&keep_running)) {
-        //  &&
-        // (!test_mode || iterations < max_iterations)) {
         int nfds =
             epoll_wait(epoll_fd, events, MAX_EVENTS,
                        -1);  // returns as soon as an event occurs, no delay
@@ -220,7 +200,6 @@ int run_server(int port) {
         for (int i = 0; i < nfds; ++i) {
             handle_event(epoll_fd, &events[i]);
         }
-        // iterations++;
     }
     // Cleanup on shutdown
     cleanup_all_clients(&client_list_head);
@@ -228,6 +207,5 @@ int run_server(int port) {
     server_event = NULL;
     close(epoll_fd);
     close(server_fd);
-    // printf("SERVER STOPED!\n");
     return 0;
 }

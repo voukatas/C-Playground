@@ -1,6 +1,7 @@
 #include "../include/client.h"
 
 #include <stdio.h>
+#include <string.h>
 
 void add_client_to_list(client_node_t **head, node_data_t *client_data) {
     client_node_t *new_node = malloc(sizeof(client_node_t));
@@ -95,6 +96,34 @@ void set_error_msg(int epoll_fd, client_t *client, struct epoll_event *ev,
     }
 }
 
+void process_command(char *command, char *response) {
+    printf("Processing command: %s\n", command);
+
+    char *cmd = NULL;
+    if (strncmp(command, "SET ", 4) == 0) {
+        // Set a key value on hashmap
+        cmd = "OK";
+        // or ERROR
+        // cmd = "ERROR";
+    } else if (strncmp(command, "GET ", 4) == 0) {
+        // Get a value from hashmap
+        cmd = "Hello GET";
+    } else if (strncmp(command, "DELETE ", 7) == 0) {
+        // Delete a value
+        cmd = "OK";
+    } else {
+        // Unknown command
+        cmd = "ERROR: UNKNOWN COMMAND";
+    }
+
+    // Consider the \r\n\0
+    if (strlen(cmd) >= BUFFER_SIZE - 3) {
+        cmd = "ERROR: RESPONSE OVERFLOW";
+    }
+    snprintf(response, BUFFER_SIZE, "%s\r\n", cmd);
+    printf("Processing command response: %s\n", response);
+}
+
 void handle_client_read(client_t *client, struct epoll_event *ev,
                         int epoll_fd) {
     char temp_buffer[BUFFER_SIZE];
@@ -126,8 +155,7 @@ void handle_client_read(client_t *client, struct epoll_event *ev,
                     client->read_buffer + client->read_buffer_len) {
                     // There's more data after the first \r\n, this as an error
                     const char *error_response =
-                        "ERROR: Multiple commands in one "
-                        "request\r\n";
+                        "ERROR: Multiple commands in one request\r\n";
                     set_error_msg(epoll_fd, client, ev, error_response);
                     return;
                 }
@@ -138,8 +166,9 @@ void handle_client_read(client_t *client, struct epoll_event *ev,
                 strncpy(command, client->read_buffer, command_length);
                 command[command_length] = '\0';
 
-                printf("Processing command: %s\n", command);
-                const char *response = "Hello World from Server\r\n";
+                char response[BUFFER_SIZE];
+                process_command(command, response);
+                // const char *response = "Hello World from Server\r\n";
                 int response_len = strlen(response);
 
                 // Check if the write buffer has enough space for the response
