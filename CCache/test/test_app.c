@@ -198,7 +198,7 @@ void test_run_server_initialization(void) {
     TEST_ASSERT_EQUAL_STRING("OK\r\n", buffer);
 
     // To shutdown the event loop
-    sleep(1);
+    // sleep(1);
     handle_shutdown_signal(0);
     connect_disconnect_client(port, "127.0.0.1");
 
@@ -234,8 +234,8 @@ void test_run_server_multiple_clients(void) {
     send_client_msg(sockfd3, "CONNECTIONS\r\n", buffer);
     TEST_ASSERT_EQUAL_STRING("2\r\n", buffer);
 
-    sleep(1);
-    //  To shutdown the event loop
+    // sleep(1);
+    //   To shutdown the event loop
     handle_shutdown_signal(0);
     connect_disconnect_client(port, "127.0.0.1");
 
@@ -291,8 +291,8 @@ void test_cache_api(void) {
 
     disconnect_client(sockfd);
 
-    sleep(1);
-    //  To shutdown the event loop
+    // sleep(1);
+    //   To shutdown the event loop
     handle_shutdown_signal(0);
     connect_disconnect_client(port, "127.0.0.1");
 
