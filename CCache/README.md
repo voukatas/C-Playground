@@ -37,3 +37,6 @@ lcov --capture --directory . --output-file coverage.info && genhtml coverage.inf
 make clean
 
 ```
+
+# To-Do
+- Either remove the linked list that keeps track of the connections (since it adds management complexity) or implement a periodic validation of the connections.

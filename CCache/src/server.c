@@ -177,6 +177,7 @@ static void handle_event(int epoll_fd, struct epoll_event *event) {
 
 int run_server(int port) {
     active_connections = 0;
+    keep_running = 1;
     // Create hashtable
     hash_table_main = create_table(1000);
     //  Set up signal handling
@@ -193,6 +194,9 @@ int run_server(int port) {
         int nfds =
             epoll_wait(epoll_fd, events, MAX_EVENTS,
                        -1);  // returns as soon as an event occurs, no delay
+        if (!atomic_load(&keep_running)) {
+            break;
+        }
         if (nfds == -1) {
             if (errno == EINTR) {
                 break;
