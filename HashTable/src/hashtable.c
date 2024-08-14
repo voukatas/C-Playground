@@ -7,19 +7,19 @@
 
 #include "../include/hashtable.h"
 
-int resize(hash_table_t *ht);
-int resize_fc_enabled = 1;
+int hash_table_resize(hash_table_t *ht);
+int hash_table_resize_fc_enabled = 1;
 
 // pthread_mutex_t hash_table_mutex = PTHREAD_MUTEX_INITIALIZER;
 //  init table
-hash_table_t *create_table(int capacity) {
+hash_table_t *hash_table_create(int capacity) {
         hash_table_t *ht = malloc(sizeof(hash_table_t));
         if (!ht) {
                 printf("failed to allocate memory: %s", strerror(errno));
                 exit(EXIT_FAILURE);
         }
 
-        ht->table = malloc(sizeof(entry_t *) * capacity);
+        ht->table = malloc(sizeof(hash_entry_t *) * capacity);
         if (!ht->table) {
                 printf("failed to allocate memory: %s", strerror(errno));
                 free(ht);
@@ -41,7 +41,7 @@ hash_table_t *create_table(int capacity) {
 }
 
 // Hash djb2
-int hash(char *key, int capacity) {
+static int hash(char *key, int capacity) {
 
         unsigned long hash = 5381;
         int c;
@@ -56,12 +56,13 @@ int hash(char *key, int capacity) {
 }
 
 // Set
-int set_value(hash_table_t *ht, char *key, void *value, size_t size) {
+int hash_table_set(hash_table_t *ht, char *key, void *value, size_t size) {
         // printf("init size: %d\n", ht->size);
         pthread_mutex_lock(&ht->hash_table_mutex);
-        if ((ht->size >= (ht->capacity * 0.75)) && resize_fc_enabled) {
+        if ((ht->size >= (ht->capacity * 0.75)) &&
+            hash_table_resize_fc_enabled) {
                 // printf("size: %d cap: %d\n", ht->size, ht->capacity / 2);
-                int result = resize(ht);
+                int result = hash_table_resize(ht);
                 if (result != 0) {
                         pthread_mutex_unlock(&ht->hash_table_mutex);
                         return -1;
@@ -69,7 +70,7 @@ int set_value(hash_table_t *ht, char *key, void *value, size_t size) {
         }
         int address = hash(key, ht->capacity);
 
-        entry_t *entry = ht->table[address];
+        hash_entry_t *entry = ht->table[address];
 
         while (entry != NULL) {
                 if (strcmp(entry->key, key) == 0) {
@@ -90,7 +91,7 @@ int set_value(hash_table_t *ht, char *key, void *value, size_t size) {
                 entry = entry->next;
         }
 
-        entry = malloc(sizeof(entry_t)); // consider also calloc
+        entry = malloc(sizeof(hash_entry_t)); // consider also calloc
         if (!entry) {
                 printf("failed to allocate memory: %s\n", strerror(errno));
                 pthread_mutex_unlock(&ht->hash_table_mutex);
@@ -121,11 +122,11 @@ int set_value(hash_table_t *ht, char *key, void *value, size_t size) {
 }
 
 // Get
-void *get_value(hash_table_t *ht, char *key) {
+void *hash_table_get(hash_table_t *ht, char *key) {
         pthread_mutex_lock(&ht->hash_table_mutex);
 
         int address = hash(key, ht->capacity);
-        entry_t *entry = ht->table[address];
+        hash_entry_t *entry = ht->table[address];
 
         while (entry != NULL) {
                 if (strcmp(entry->key, key) == 0) {
@@ -139,13 +140,13 @@ void *get_value(hash_table_t *ht, char *key) {
         return NULL;
 }
 
-int delete_entry(hash_table_t *ht, char *key) {
+int hash_table_remove(hash_table_t *ht, char *key) {
         pthread_mutex_lock(&ht->hash_table_mutex);
 
         int address = hash(key, ht->capacity);
 
-        entry_t *current_entry = ht->table[address];
-        entry_t *prev_entry = NULL;
+        hash_entry_t *current_entry = ht->table[address];
+        hash_entry_t *prev_entry = NULL;
 
         while (current_entry != NULL) {
                 if (strcmp(current_entry->key, key) == 0) {
@@ -172,11 +173,11 @@ int delete_entry(hash_table_t *ht, char *key) {
 // resize
 // Avoid the use of realloc here because you will end up reading and modifying
 // the same table...
-int resize(hash_table_t *ht) {
+int hash_table_resize(hash_table_t *ht) {
         // printf("resize initiated\n");
         int new_capacity_no = 2 * ht->capacity;
-        entry_t **new_table =
-            (entry_t **)malloc(new_capacity_no * sizeof(entry_t *));
+        hash_entry_t **new_table =
+            (hash_entry_t **)malloc(new_capacity_no * sizeof(hash_entry_t *));
         if (new_table == NULL) {
                 printf("failed to allocate memory for new table: %s\n",
                        strerror(errno));
@@ -189,9 +190,9 @@ int resize(hash_table_t *ht) {
 
         // Re-hash
         for (int i = 0; i < ht->capacity; i++) {
-                entry_t *entry = ht->table[i];
+                hash_entry_t *entry = ht->table[i];
                 while (entry != NULL) {
-                        entry_t *next = entry->next;
+                        hash_entry_t *next = entry->next;
                         int address = hash(entry->key, new_capacity_no);
                         entry->next = new_table[address];
                         new_table[address] = entry;
@@ -208,12 +209,12 @@ int resize(hash_table_t *ht) {
 }
 
 // Keys
-void print_keys(hash_table_t *ht) {
+void hash_table_print_keys(hash_table_t *ht) {
         pthread_mutex_lock(&ht->hash_table_mutex);
 
         printf("Keys:\n");
         for (int i = 0; i < ht->capacity; i++) {
-                entry_t *entry = ht->table[i];
+                hash_entry_t *entry = ht->table[i];
                 if (entry == NULL) {
                         continue;
                 }
@@ -227,16 +228,16 @@ void print_keys(hash_table_t *ht) {
 }
 
 // CleanUp
-void clean_up(hash_table_t *ht) {
+void hash_table_cleanup(hash_table_t *ht) {
         pthread_mutex_lock(&ht->hash_table_mutex);
 
         for (int i = 0; i < ht->capacity; i++) {
-                entry_t *entry = ht->table[i];
+                hash_entry_t *entry = ht->table[i];
                 if (entry == NULL) {
                         continue;
                 }
                 while (entry != NULL) {
-                        entry_t *tmp = entry->next;
+                        hash_entry_t *tmp = entry->next;
                         free(entry->value);
                         free(entry->key);
                         free(entry);
@@ -249,6 +250,6 @@ void clean_up(hash_table_t *ht) {
         free(ht);
 }
 
-void set_resize_flag(int enabled) {
-        resize_fc_enabled = enabled;
+void hash_table_set_resize_flag(int enabled) {
+        hash_table_resize_fc_enabled = enabled;
 }
