@@ -1,40 +1,78 @@
 #include "../include/hashtable.h"
+#include <assert.h>
 
-void checkSetResult(int result) {
-        if (result != 0) {
-                printf("%s\n", strerror(errno));
-                exit(EXIT_FAILURE);
-        }
-}
+typedef struct {
+        char *key;
+        float value;
+} key_value_t;
 
+// Examples
 int main() {
         hash_table_t *ht = create_table(100);
-        char key1[] = "key1";
-        char key2[] = "key2";
-        char val1[] = "val1";
-        char val2[] = "val2";
-        char val11[] = "val11";
 
-        int result = set_value(ht, key1, val1);
-        checkSetResult(result);
-        char *res1 = get_value(ht, key1);
-        printf("res1: %s\n", res1);
+        // String usage
+        char key1_str[] = "key1_str";
+        char val1_str[] = "val1";
 
-        result = set_value(ht, key2, val2);
-        checkSetResult(result);
-        char *res2 = get_value(ht, key2);
-        printf("res2: %s\n", res2);
+        int result = set_value(ht, key1_str, val1_str, sizeof(val1_str));
+        assert(result == 0);
+        char *res_str = get_value(ht, key1_str);
+        assert(res_str != NULL);
+        assert(strcmp(res_str, val1_str) == 0);
+        printf("result string: %s\n", res_str);
 
-        result = set_value(ht, key1, val11);
-        checkSetResult(result);
-        char *res3 = get_value(ht, key1);
-        printf("res3: %s\n", res3);
-        char *res4 = get_value(ht, "doesntexist");
-        printf("res4: %s\n", res4);
+        // Int usage
+        char key2_int[] = "key2_int";
+        int val2_int = 2;
 
+        result = set_value(ht, key2_int, &val2_int, sizeof(val2_int));
+        assert(result == 0);
+        int *res_int = get_value(ht, key2_int);
+        assert(res_int != NULL);
+        assert(*res_int == val2_int);
+        printf("result int: %d\n", *res_int);
+
+        // Float usage
+        char key3_float[] = "key3_float";
+        float val3_float = 3.14;
+
+        result = set_value(ht, key3_float, &val3_float, sizeof(val3_float));
+        assert(result == 0);
+        float *res_float = get_value(ht, key3_float);
+        assert(res_float != NULL);
+        assert(*res_float == val3_float);
+        printf("result float: %f\n", *res_float);
+        assert(ht->size == 3);
+
+        int delete_result = delete_entry(ht, key3_float);
+        assert(delete_result == 0);
+        assert(ht->size == 2);
+
+        // Verify the entry was deleted
+        float *deleted_item = get_value(ht, key3_float);
+        assert(deleted_item == NULL);
+
+        // Custom struct usage
+        // We store in the key a custom struct
+        char key1_custom_kv[] = "key1_custom_kv";
+        key_value_t value_custom_kv;
+
+        value_custom_kv.key = "inner_key";
+        value_custom_kv.value = 3.14;
+
+        set_value(ht, key1_custom_kv, &value_custom_kv,
+                  sizeof(value_custom_kv));
+        assert(ht->size == 3);
+        key_value_t *res_custom_kv = get_value(ht, key1_custom_kv);
+        assert(value_custom_kv.key == res_custom_kv->key);
+        assert(value_custom_kv.value == res_custom_kv->value);
+
+        // Other examples
+        char *res_doesnt_exist = get_value(ht, "doesntexist");
+        assert(res_doesnt_exist == NULL);
+
+        // Print a list of keys for debugging
         print_keys(ht);
-
-        // resize(ht);
 
         clean_up(ht);
 }

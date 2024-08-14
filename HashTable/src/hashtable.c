@@ -1,4 +1,5 @@
 #include <pthread.h>
+#include <string.h>
 #ifdef TESTING
 // #warning "TESTING macro is defined"
 #include "../include/mock_malloc.h"
@@ -52,7 +53,7 @@ int hash(char *key, int capacity) {
 }
 
 // Set
-int set_value(hash_table_t *ht, char *key, char *value) {
+int set_value(hash_table_t *ht, char *key, void *value, size_t size) {
         // printf("init size: %d\n", ht->size);
         pthread_mutex_lock(&ht->hash_table_mutex);
         if (ht->size >= (ht->capacity * 0.75)) {
@@ -71,13 +72,15 @@ int set_value(hash_table_t *ht, char *key, char *value) {
                 if (strcmp(entry->key, key) == 0) {
                         // printf("entry key: %s key: %s\n", entry->Key, key);
                         free(entry->value);
-                        entry->value = strdup(value);
+                        // entry->value = strdup(value);
+                        entry->value = malloc(size);
                         if (!entry->value) {
                                 printf("failed to allocate memory: %s\n",
                                        strerror(errno));
                                 pthread_mutex_unlock(&ht->hash_table_mutex);
                                 return -1;
                         }
+                        memcpy(entry->value, value, size);
                         pthread_mutex_unlock(&ht->hash_table_mutex);
                         return 0; // Success
                 }
@@ -91,7 +94,8 @@ int set_value(hash_table_t *ht, char *key, char *value) {
                 return -1;
         }
         entry->key = strdup(key);
-        entry->value = strdup(value);
+        // entry->value = strdup(value);
+        entry->value = malloc(size);
         if (!entry->key || !entry->value) {
                 printf("failed to allocate memory for key or value: %s\n",
                        strerror(errno));
@@ -101,6 +105,7 @@ int set_value(hash_table_t *ht, char *key, char *value) {
                 pthread_mutex_unlock(&ht->hash_table_mutex);
                 return -1; // Error
         }
+        memcpy(entry->value, value, size);
 
         entry->next = ht->table[address];
         ht->table[address] = entry;
@@ -113,7 +118,7 @@ int set_value(hash_table_t *ht, char *key, char *value) {
 }
 
 // Get
-char *get_value(hash_table_t *ht, char *key) {
+void *get_value(hash_table_t *ht, char *key) {
         pthread_mutex_lock(&ht->hash_table_mutex);
 
         int address = hash(key, ht->capacity);

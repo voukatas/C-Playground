@@ -8,6 +8,8 @@ CC = gcc
 # sudo sysctl vm.mmap_rnd_bits=28
 #CFLAGS = -Iunity -Iinclude -Wall -Wextra -Werror -g -pthread -fsanitize=thread
 CFLAGS = -Iunity -Iinclude -Wall -Wextra -Werror -g -pthread
+# For code coverage
+#CFLAGS = -Iunity -Iinclude -Wall -Wextra -Werror -g -pthread -fprofile-arcs -ftest-coverage
 OPTIMIZED_FLAGS = -Iinclude -Wall -Wextra -Werror -O2 -s -pthread
 #
 # Flags to check for memory issues

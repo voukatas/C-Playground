@@ -12,26 +12,36 @@ void tearDown(void) {
 // Test cases
 void test_hashtable_with_capacity_one(void) {
         hash_table_t *ht = create_table(1);
-        char key1[] = "key1";
-        char key2[] = "key2";
-        char val1[] = "val1";
-        char val2[] = "val2";
-        char val11[] = "val11";
 
-        set_value(ht, key1, val1);
+        char key1_str[] = "key1_str";
+        char val1_str[] = "val1";
+        char val11_str[] = "val11";
+
+        char key2_int[] = "key2_int";
+        int val2_int = 2;
+
+        char key3_float[] = "key3_float";
+        float val3_float = 3.14;
+
+        set_value(ht, key1_str, val1_str, sizeof(val1_str));
         TEST_ASSERT_EQUAL_INT(1, ht->size);
-        char *res1 = get_value(ht, key1);
-        TEST_ASSERT_EQUAL_STRING(val1, res1);
+        char *res1 = get_value(ht, key1_str);
+        TEST_ASSERT_EQUAL_STRING(val1_str, res1);
 
-        set_value(ht, key2, val2);
+        set_value(ht, key2_int, &val2_int, sizeof(val2_int));
         TEST_ASSERT_EQUAL_INT(2, ht->size);
-        char *res2 = get_value(ht, key2);
-        TEST_ASSERT_EQUAL_STRING(val2, res2);
+        int *res2 = (int *)get_value(ht, key2_int);
+        TEST_ASSERT_EQUAL_INT(val2_int, *res2);
 
-        set_value(ht, key1, val11);
-        TEST_ASSERT_EQUAL_INT(2, ht->size);
-        char *res3 = get_value(ht, key1);
-        TEST_ASSERT_EQUAL_STRING(val11, res3);
+        set_value(ht, key3_float, &val3_float, sizeof(val3_float));
+        TEST_ASSERT_EQUAL_INT(3, ht->size);
+        float *res3 = (float *)get_value(ht, key3_float);
+        TEST_ASSERT_EQUAL_FLOAT(val3_float, *res3);
+
+        set_value(ht, key1_str, val11_str, sizeof(val11_str));
+        TEST_ASSERT_EQUAL_INT(3, ht->size);
+        char *res4 = get_value(ht, key1_str);
+        TEST_ASSERT_EQUAL_STRING(val11_str, res4);
 
         // PrintKeys(ht);
         clean_up(ht);
@@ -39,36 +49,87 @@ void test_hashtable_with_capacity_one(void) {
 
 void test_hashtable_with_capacity_100(void) {
         hash_table_t *ht = create_table(100);
-        char key1[] = "key1";
-        char key2[] = "key2";
-        char key3[] = "doesntexist";
-        char val1[] = "val1";
-        char val2[] = "val2";
-        char val11[] = "val11";
 
-        set_value(ht, key1, val1);
+        char key1_str[] = "key1_str";
+        char val1_str[] = "val1";
+        char val11_str[] = "val11";
+
+        char key2_int[] = "key2_int";
+        int val2_int = 2;
+
+        char key3_float[] = "key3_float";
+        float val3_float = 3.14;
+
+        set_value(ht, key1_str, val1_str, sizeof(val1_str));
         TEST_ASSERT_EQUAL_INT(1, ht->size);
-        char *res1 = get_value(ht, key1);
-        TEST_ASSERT_EQUAL_STRING(val1, res1);
+        char *res1 = get_value(ht, key1_str);
+        TEST_ASSERT_EQUAL_STRING(val1_str, res1);
 
-        set_value(ht, key2, val2);
+        set_value(ht, key2_int, &val2_int, sizeof(val2_int));
         TEST_ASSERT_EQUAL_INT(2, ht->size);
-        char *res2 = get_value(ht, key2);
-        TEST_ASSERT_EQUAL_STRING(val2, res2);
+        int *res2 = (int *)get_value(ht, key2_int);
+        TEST_ASSERT_EQUAL_INT(val2_int, *res2);
 
-        set_value(ht, key1, val11);
-        TEST_ASSERT_EQUAL_INT(2, ht->size);
-        char *res3 = get_value(ht, key1);
-        TEST_ASSERT_EQUAL_STRING(val11, res3);
+        set_value(ht, key3_float, &val3_float, sizeof(val3_float));
+        TEST_ASSERT_EQUAL_INT(3, ht->size);
+        float *res3 = (float *)get_value(ht, key3_float);
+        TEST_ASSERT_EQUAL_FLOAT(val3_float, *res3);
 
-        // Test that NULL is returned in case a key doesn't exist
-        char *res4 = get_value(ht, key3);
-        TEST_ASSERT_NULL(res4);
-
+        set_value(ht, key1_str, val11_str, sizeof(val11_str));
+        TEST_ASSERT_EQUAL_INT(3, ht->size);
+        char *res4 = get_value(ht, key1_str);
+        TEST_ASSERT_EQUAL_STRING(val11_str, res4);
         // PrintKeys(ht);
         clean_up(ht);
 }
 
+void test_store_custom_struct_value(void) {
+        hash_table_t *ht = create_table(100);
+        typedef struct {
+                char *key;
+                float value;
+        } key_value_t;
+
+        char key1_custom_kv[] = "key1_custom_kv";
+        key_value_t value_custom_kv;
+
+        value_custom_kv.key = "inner_key";
+        value_custom_kv.value = 3.14;
+
+        set_value(ht, key1_custom_kv, &value_custom_kv,
+                  sizeof(value_custom_kv));
+        TEST_ASSERT_EQUAL_INT(1, ht->size);
+        key_value_t *res1 = get_value(ht, key1_custom_kv);
+        TEST_ASSERT_EQUAL_STRING(value_custom_kv.key, res1->key);
+        TEST_ASSERT_EQUAL_FLOAT(value_custom_kv.value, res1->value);
+
+        // PrintKeys(ht);
+        clean_up(ht);
+}
+void test_store_custom_struct_value_ptr(void) {
+        hash_table_t *ht = create_table(100);
+        typedef struct {
+                char *key;
+                float value;
+        } key_value_t;
+
+        char key1_custom_kv[] = "key1_custom_kv";
+        key_value_t *value_custom_kv = malloc(sizeof(key_value_t));
+
+        value_custom_kv->key = "inner_key";
+        value_custom_kv->value = 3.14;
+
+        set_value(ht, key1_custom_kv, value_custom_kv,
+                  sizeof(*value_custom_kv));
+        TEST_ASSERT_EQUAL_INT(1, ht->size);
+        key_value_t *res1 = get_value(ht, key1_custom_kv);
+        TEST_ASSERT_EQUAL_STRING("inner_key", res1->key);
+        TEST_ASSERT_EQUAL_FLOAT(3.14, res1->value);
+
+        // PrintKeys(ht);
+        free(value_custom_kv);
+        clean_up(ht);
+}
 void test_Set_malloc_fail(void) {
         int table_size = 100;
         hash_table_t *ht = create_table(table_size);
@@ -78,7 +139,7 @@ void test_Set_malloc_fail(void) {
 
         char key[] = "key";
         char val[] = "val";
-        int result = set_value(ht, key, val);
+        int result = set_value(ht, key, val, sizeof(val));
 
         TEST_ASSERT_EQUAL_INT(-1, result);
         TEST_ASSERT_EQUAL_INT(0, ht->size);
@@ -99,11 +160,11 @@ void test_delete_entry(void) {
         char key[] = "key";
         char val[] = "val";
 
-        int set_result = set_value(ht, key, val);
+        int set_result = set_value(ht, key, val, sizeof(val));
         TEST_ASSERT_EQUAL_INT(1, ht->size);
         TEST_ASSERT_EQUAL_INT(0, set_result);
 
-        char *res = get_value(ht, key);
+        char *res = (char *)get_value(ht, key);
         TEST_ASSERT_NOT_NULL(res);
         TEST_ASSERT_EQUAL_STRING(val, res);
 
@@ -113,8 +174,27 @@ void test_delete_entry(void) {
         TEST_ASSERT_EQUAL_INT(0, delete_result);
 
         // Verify the entry was deleted
-        res = get_value(ht, key);
+        res = (char *)get_value(ht, key);
         TEST_ASSERT_NULL(res);
+
+        char key_int[] = "key_int";
+        int val_int = 2;
+        set_result = set_value(ht, key_int, &val_int, sizeof(val_int));
+        TEST_ASSERT_EQUAL_INT(1, ht->size);
+        TEST_ASSERT_EQUAL_INT(0, set_result);
+
+        int *res_int = (int *)get_value(ht, key_int);
+        TEST_ASSERT_NOT_NULL(res_int);
+        TEST_ASSERT_EQUAL_INT(val_int, *res_int);
+
+        // Delete the entry
+        int delete_result_int = delete_entry(ht, key_int);
+        TEST_ASSERT_EQUAL_INT(0, ht->size);
+        TEST_ASSERT_EQUAL_INT(0, delete_result_int);
+
+        // Verify the entry was deleted
+        res_int = (int *)get_value(ht, key_int);
+        TEST_ASSERT_NULL(res_int);
 
         clean_up(ht);
 }
@@ -143,19 +223,19 @@ void test_resize(void) {
         char val[] = "val";
 
         // set the values and check that the size increased
-        set_value(ht, key1, val);
+        set_value(ht, key1, val, sizeof(key1));
         TEST_ASSERT_EQUAL_INT(1, ht->size);
 
-        set_value(ht, key2, val);
+        set_value(ht, key2, val, sizeof(key2));
         TEST_ASSERT_EQUAL_INT(2, ht->size);
 
-        set_value(ht, key3, val);
+        set_value(ht, key3, val, sizeof(key3));
         TEST_ASSERT_EQUAL_INT(3, ht->size);
 
-        set_value(ht, key4, val);
+        set_value(ht, key4, val, sizeof(key4));
         TEST_ASSERT_EQUAL_INT(4, ht->size);
 
-        set_value(ht, key5, val);
+        set_value(ht, key5, val, sizeof(key5));
         TEST_ASSERT_EQUAL_INT(5, ht->size);
 
         // check that the capacity was increased
@@ -193,7 +273,7 @@ void *thread_func1(void *arg) {
                 // pthread_mutex_lock(&counter_mutex);
                 // set_value(ht, "key1", "val1");
                 // pthread_mutex_unlock(&counter_mutex);
-                set_value(ht, "key1", "val1");
+                set_value(ht, "key1", "val1", strlen("val1") + 1);
         }
         return NULL;
 }
@@ -204,7 +284,7 @@ void *thread_func2(void *arg) {
                 // pthread_mutex_lock(&counter_mutex);
                 // set_value(ht, "key2", "val1");
                 // pthread_mutex_unlock(&counter_mutex);
-                set_value(ht, "key1", "val1");
+                set_value(ht, "key1", "val1", sizeof("val1"));
         }
         return NULL;
 }
@@ -241,7 +321,7 @@ void *thread_set_value(void *arg) {
         for (int i = 0; i < NUM_OPERATIONS; i++) {
                 char key[64];
                 snprintf(key, sizeof(key), "%s_%d", data->key, i);
-                set_value(data->ht, key, data->value);
+                set_value(data->ht, key, data->value, sizeof(data->value));
         }
         return NULL;
 }
@@ -312,5 +392,7 @@ int main(void) {
         RUN_TEST(test_resize);
         RUN_TEST(test_threading);
         RUN_TEST(test_thread_safety);
+        RUN_TEST(test_store_custom_struct_value_ptr);
+        RUN_TEST(test_store_custom_struct_value);
         return UNITY_END();
 }
