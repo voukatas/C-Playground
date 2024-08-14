@@ -7,9 +7,9 @@ CC = gcc
 # You might need this in order to run properly
 # sudo sysctl vm.mmap_rnd_bits=28
 #CFLAGS = -Iunity -Iinclude -Wall -Wextra -Werror -g -pthread -fsanitize=thread
-CFLAGS = -Iunity -Iinclude -Wall -Wextra -Werror -g -pthread
+#CFLAGS = -Iunity -Iinclude -Wall -Wextra -Werror -g -pthread
 # For code coverage
-#CFLAGS = -Iunity -Iinclude -Wall -Wextra -Werror -g -pthread -fprofile-arcs -ftest-coverage
+CFLAGS = -Iunity -Iinclude -Wall -Wextra -Werror -g -pthread -fprofile-arcs -ftest-coverage
 OPTIMIZED_FLAGS = -Iinclude -Wall -Wextra -Werror -O2 -s -pthread
 #
 # Flags to check for memory issues
@@ -56,4 +56,5 @@ test_obj/%.o: src/%.c
 clean:
 	@rm -f $(APP_OBJ) $(TEST_OBJ) $(APP_TARGET) $(TEST_TARGET) $(OPTIMIZED_TARGET) $(OPTIMIZED_OBJ)
 	@rm -rf test_obj/
+	@rm src/hashtable.gcno src/main.gcno test/mock_malloc.gcda test/mock_malloc.gcno test/test_app.gcda test/test_app.gcno unity/unity.gcda unity/unity.gcno 
 

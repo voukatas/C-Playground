@@ -7,6 +7,8 @@
 
 #include "../include/hashtable.h"
 
+int resize_fc_enabled = 1;
+
 // pthread_mutex_t hash_table_mutex = PTHREAD_MUTEX_INITIALIZER;
 //  init table
 hash_table_t *create_table(int capacity) {
@@ -56,7 +58,7 @@ int hash(char *key, int capacity) {
 int set_value(hash_table_t *ht, char *key, void *value, size_t size) {
         // printf("init size: %d\n", ht->size);
         pthread_mutex_lock(&ht->hash_table_mutex);
-        if (ht->size >= (ht->capacity * 0.75)) {
+        if ((ht->size >= (ht->capacity * 0.75)) && resize_fc_enabled) {
                 // printf("size: %d cap: %d\n", ht->size, ht->capacity / 2);
                 int result = resize(ht);
                 if (result != 0) {
@@ -244,4 +246,8 @@ void clean_up(hash_table_t *ht) {
         pthread_mutex_unlock(&ht->hash_table_mutex);
         pthread_mutex_destroy(&ht->hash_table_mutex);
         free(ht);
+}
+
+void set_resize_flag(int enabled) {
+        resize_fc_enabled = enabled;
 }

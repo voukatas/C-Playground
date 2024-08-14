@@ -199,6 +199,65 @@ void test_delete_entry(void) {
         clean_up(ht);
 }
 
+void test_delete_midle_entry(void) {
+        int table_size = 1;
+        hash_table_t *ht = create_table(table_size);
+        set_resize_flag(0);
+
+        char key[] = "key";
+        char val[] = "val";
+
+        int set_result = set_value(ht, key, val, sizeof(val));
+        TEST_ASSERT_EQUAL_INT(1, ht->size);
+        TEST_ASSERT_EQUAL_INT(0, set_result);
+
+        char *res = (char *)get_value(ht, key);
+        TEST_ASSERT_NOT_NULL(res);
+        TEST_ASSERT_EQUAL_STRING(val, res);
+
+        char key_int[] = "key_int";
+        int val_int = 2;
+        set_result = set_value(ht, key_int, &val_int, sizeof(val_int));
+        TEST_ASSERT_EQUAL_INT(2, ht->size);
+        TEST_ASSERT_EQUAL_INT(0, set_result);
+
+        int *res_int = (int *)get_value(ht, key_int);
+        TEST_ASSERT_NOT_NULL(res_int);
+        TEST_ASSERT_EQUAL_INT(val_int, *res_int);
+
+        typedef struct {
+                char *key;
+                float value;
+        } key_value_t;
+
+        char key1_custom_kv[] = "key1_custom_kv";
+        key_value_t value_custom_kv;
+
+        value_custom_kv.key = "inner_key";
+        value_custom_kv.value = 3.14;
+
+        set_value(ht, key1_custom_kv, &value_custom_kv,
+                  sizeof(value_custom_kv));
+        TEST_ASSERT_EQUAL_INT(3, ht->size);
+        key_value_t *res_custom_kv = get_value(ht, key1_custom_kv);
+        TEST_ASSERT_EQUAL_STRING(res_custom_kv->key, value_custom_kv.key);
+        TEST_ASSERT_EQUAL_FLOAT(res_custom_kv->value, value_custom_kv.value);
+
+        // Delete Middle entry
+        int delete_result_int = delete_entry(ht, key_int);
+        TEST_ASSERT_EQUAL_INT(2, ht->size);
+        TEST_ASSERT_EQUAL_INT(0, delete_result_int);
+
+        // Verify the entry was deleted
+        res_int = (int *)get_value(ht, key_int);
+        TEST_ASSERT_NULL(res_int);
+
+        print_keys(ht);
+
+        set_resize_flag(1);
+        clean_up(ht);
+}
+
 void test_delete_invalid_entry(void) {
         int table_size = 100;
         hash_table_t *ht = create_table(table_size);
@@ -394,5 +453,6 @@ int main(void) {
         RUN_TEST(test_thread_safety);
         RUN_TEST(test_store_custom_struct_value_ptr);
         RUN_TEST(test_store_custom_struct_value);
+        RUN_TEST(test_delete_midle_entry);
         return UNITY_END();
 }

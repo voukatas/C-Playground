@@ -32,5 +32,9 @@ void print_keys(hash_table_t *ht);
 void clean_up(hash_table_t *ht);
 int delete_entry(hash_table_t *ht, char *key);
 int resize(hash_table_t *ht);
+void set_resize_flag(int enabled);
+
+// Features flags
+extern int resize_fc_enabled;
 
 #endif
