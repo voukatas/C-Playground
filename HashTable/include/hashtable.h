@@ -25,14 +25,18 @@ typedef struct hash_table {
 } hash_table_t;
 
 hash_table_t *create_table(int capacity);
-int hash(char *key, int capacity);
+//int hash(char *key, int capacity);
 int set_value(hash_table_t *ht, char *key, void *value, size_t size);
 void *get_value(hash_table_t *ht, char *key);
 void print_keys(hash_table_t *ht);
 void clean_up(hash_table_t *ht);
 int delete_entry(hash_table_t *ht, char *key);
-int resize(hash_table_t *ht);
 void set_resize_flag(int enabled);
+
+// Consider indirect testing for this so I can make it static
+#ifdef TESTING
+int resize(hash_table_t *ht);
+#endif
 
 // Features flags
 extern int resize_fc_enabled;

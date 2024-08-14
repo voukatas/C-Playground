@@ -7,6 +7,7 @@
 
 #include "../include/hashtable.h"
 
+int resize(hash_table_t *ht);
 int resize_fc_enabled = 1;
 
 // pthread_mutex_t hash_table_mutex = PTHREAD_MUTEX_INITIALIZER;
