@@ -57,8 +57,12 @@ static int hash(char *key, int capacity) {
 
 // Set
 int hash_table_set(hash_table_t *ht, char *key, void *value, size_t size) {
-        // printf("init size: %d\n", ht->size);
+        if (key == NULL || value == NULL) {
+                printf("invalid memory reference\n");
+                return -1;
+        }
         pthread_mutex_lock(&ht->hash_table_mutex);
+        // printf("init size: %d\n", ht->size);
         if ((ht->size >= (ht->capacity * 0.75)) &&
             hash_table_resize_fc_enabled) {
                 // printf("size: %d cap: %d\n", ht->size, ht->capacity / 2);
@@ -75,16 +79,23 @@ int hash_table_set(hash_table_t *ht, char *key, void *value, size_t size) {
         while (entry != NULL) {
                 if (strcmp(entry->key, key) == 0) {
                         // printf("entry key: %s key: %s\n", entry->Key, key);
-                        free(entry->value);
-                        // entry->value = strdup(value);
-                        entry->value = malloc(size);
-                        if (!entry->value) {
+
+                        void *new_value = malloc(size);
+
+                        if (!new_value) {
                                 printf("failed to allocate memory: %s\n",
                                        strerror(errno));
                                 pthread_mutex_unlock(&ht->hash_table_mutex);
                                 return -1;
                         }
-                        memcpy(entry->value, value, size);
+                        // free the old value only if the allocation succeeds to
+                        // prevent data loss
+                        memcpy(new_value, value, size);
+
+                        free(entry->value);
+
+                        entry->value = new_value;
+
                         pthread_mutex_unlock(&ht->hash_table_mutex);
                         return 0; // Success
                 }

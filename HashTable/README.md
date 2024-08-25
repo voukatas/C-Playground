@@ -1,6 +1,6 @@
 # HashTable
 
-A simple HashTable implementation where the key is a string and the value can be anything
+A simple thread-safe HashTable implementation where the key is a string and the value can be anything
 
 # How to run
 ```bash
