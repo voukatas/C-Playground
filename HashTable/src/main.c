@@ -16,7 +16,8 @@ int main() {
         char key1_str[] = "key1_str";
         char val1_str[] = "val1";
 
-        int result = hash_table_set(ht, key1_str, val1_str, sizeof(val1_str));
+        int result =
+            hash_table_set(ht, key1_str, val1_str, strlen(val1_str) + 1);
         assert(result == 0);
         char *res_str = hash_table_get(ht, key1_str);
         assert(res_str != NULL);
