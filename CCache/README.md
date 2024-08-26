@@ -37,6 +37,10 @@ lcov --capture --directory . --output-file coverage.info && genhtml coverage.inf
 make clean
 
 ```
+## Manual check
+```bash
+echo -ne "SET key_test value_test\r\n" | nc localhost 8080
+```
 
 # To-Do
 - Either remove the linked list that keeps track of the connections (since it adds management complexity) or implement a periodic validation of the connections.

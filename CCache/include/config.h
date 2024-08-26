@@ -8,7 +8,7 @@
 //#warning "TESTING macro is defined"
 #define BUFFER_SIZE 41
 #else
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 1048576
 #endif
 
 #endif // CONFIG_H
