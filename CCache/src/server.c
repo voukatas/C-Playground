@@ -179,7 +179,7 @@ int run_server(int port) {
     active_connections = 0;
     keep_running = 1;
     // Create hashtable
-    hash_table_main = create_table(1000);
+    hash_table_main = hash_table_create(1000);
     //  Set up signal handling
     setup_signal_handling();
     int server_fd = setup_server_socket(port);
@@ -216,7 +216,7 @@ int run_server(int port) {
     server_event = NULL;
     close(epoll_fd);
     close(server_fd);
-    clean_up(hash_table_main);
+    hash_table_cleanup(hash_table_main);
     active_connections = 0;
     printf("SERVER STOPPED\n");
     return 0;

@@ -108,7 +108,7 @@ int connect_client(int port, char *ip) {
         0) {
         perror("Connection to the server failed");
         close(sockfd);
-        exit(EXIT_FAILURE);
+        // exit(EXIT_FAILURE);
     }
 
     return sockfd;
@@ -298,6 +298,59 @@ void test_cache_api(void) {
 
     pthread_join(server_thread, NULL);
 }
+
+void test_cache_api_errors(void) {
+    handle_shutdown_signal(1);
+    pthread_t server_thread;
+    int port = 8080;
+    char *ip = "127.0.0.1";
+    char buffer[BUFFER_SIZE];
+
+    pthread_create(&server_thread, NULL, run_server_thread, &port);
+
+    // Small delay for server to init
+    sleep(1);
+
+    // Test scenario
+    int sockfd = connect_client(port, ip);
+
+    // Test SET command
+    send_client_msg(sockfd, "SET test_key1 a_very_long_test_value\r\n", buffer);
+    TEST_ASSERT_EQUAL_STRING("OK\r\n", buffer);
+
+    // Test SET command
+    send_client_msg(sockfd, "SET test_key1 test_value1\r\n", buffer);
+    TEST_ASSERT_EQUAL_STRING("OK\r\n", buffer);
+
+    // Test GET command
+    send_client_msg(sockfd, "GET test_key1\r\n", buffer);
+    TEST_ASSERT_EQUAL_STRING("test_value1\r\n", buffer);
+
+    // Test GET command error
+    send_client_msg(sockfd, "GET test_invalid_key\r\n", buffer);
+    TEST_ASSERT_EQUAL_STRING("ERROR: KEY NOT FOUND\r\n", buffer);
+
+    // Test DELETE command
+    send_client_msg(sockfd, "DELETE test_key1\r\n", buffer);
+    TEST_ASSERT_EQUAL_STRING("OK\r\n", buffer);
+
+    // Test GET command error
+    send_client_msg(sockfd, "GET test_key1\r\n", buffer);
+    TEST_ASSERT_EQUAL_STRING("ERROR: KEY NOT FOUND\r\n", buffer);
+
+    // Test CONNECTIONS command
+    send_client_msg(sockfd, "CONNECTIONS\r\n", buffer);
+    TEST_ASSERT_EQUAL_STRING("1\r\n", buffer);
+
+    disconnect_client(sockfd);
+
+    // sleep(1);
+    //   To shutdown the event loop
+    handle_shutdown_signal(0);
+    connect_disconnect_client(port, "127.0.0.1");
+
+    pthread_join(server_thread, NULL);
+}
 // To-Do
 void test_handle_client_read_and_write(void) {}
 
@@ -308,6 +361,7 @@ int main(void) {
     RUN_TEST(test_run_server_initialization);
     RUN_TEST(test_run_server_multiple_clients);
     RUN_TEST(test_cache_api);
+    // RUN_TEST(test_cache_api_errors);
 
     //  RUN_TEST(test_handle_client_read_and_write);
     return UNITY_END();

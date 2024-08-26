@@ -115,7 +115,8 @@ void process_command(char *command, char *response) {
         printf("key: %s\n", key);
         printf("value: %s\n", value);
 
-        int error = set_value(hash_table_main, key, value);
+        int error =
+            hash_table_set(hash_table_main, key, value, strlen(value) + 1);
         if (error != 0) {
             fprintf(stderr, "failed to allocate memory during set_value");
             response_value = "ERROR: MEMORY ALLOC FAILURE";
@@ -123,7 +124,7 @@ void process_command(char *command, char *response) {
 
     } else if (strncmp(command_type, "GET", 3) == 0 && num_args == 2) {
         // Get a value from hashmap
-        response_value = get_value(hash_table_main, key);
+        response_value = hash_table_get(hash_table_main, key);
 
         if (response_value == NULL) {
             response_value = "ERROR: KEY NOT FOUND";
@@ -131,7 +132,7 @@ void process_command(char *command, char *response) {
     } else if (strncmp(command_type, "DELETE", 6) == 0 && num_args == 2) {
         // Delete a value
         response_value = "OK";
-        int error = delete_entry(hash_table_main, key);
+        int error = hash_table_remove(hash_table_main, key);
 
         if (error != 0) {
             response_value = "ERROR: KEY NOT FOUND";
