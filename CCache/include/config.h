@@ -6,7 +6,7 @@
 
 #ifdef TESTING
 //#warning "TESTING macro is defined"
-#define BUFFER_SIZE 28
+#define BUFFER_SIZE 41
 #else
 #define BUFFER_SIZE 1024
 #endif

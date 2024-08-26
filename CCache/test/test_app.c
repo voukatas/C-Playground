@@ -299,7 +299,7 @@ void test_cache_api(void) {
     pthread_join(server_thread, NULL);
 }
 
-void test_cache_api_errors(void) {
+void test_cache_api_error_command_too_large(void) {
     handle_shutdown_signal(1);
     pthread_t server_thread;
     int port = 8080;
@@ -315,32 +315,11 @@ void test_cache_api_errors(void) {
     int sockfd = connect_client(port, ip);
 
     // Test SET command
-    send_client_msg(sockfd, "SET test_key1 a_very_long_test_value\r\n", buffer);
-    TEST_ASSERT_EQUAL_STRING("OK\r\n", buffer);
-
-    // Test SET command
-    send_client_msg(sockfd, "SET test_key1 test_value1\r\n", buffer);
-    TEST_ASSERT_EQUAL_STRING("OK\r\n", buffer);
-
-    // Test GET command
-    send_client_msg(sockfd, "GET test_key1\r\n", buffer);
-    TEST_ASSERT_EQUAL_STRING("test_value1\r\n", buffer);
-
-    // Test GET command error
-    send_client_msg(sockfd, "GET test_invalid_key\r\n", buffer);
-    TEST_ASSERT_EQUAL_STRING("ERROR: KEY NOT FOUND\r\n", buffer);
-
-    // Test DELETE command
-    send_client_msg(sockfd, "DELETE test_key1\r\n", buffer);
-    TEST_ASSERT_EQUAL_STRING("OK\r\n", buffer);
-
-    // Test GET command error
-    send_client_msg(sockfd, "GET test_key1\r\n", buffer);
-    TEST_ASSERT_EQUAL_STRING("ERROR: KEY NOT FOUND\r\n", buffer);
-
-    // Test CONNECTIONS command
-    send_client_msg(sockfd, "CONNECTIONS\r\n", buffer);
-    TEST_ASSERT_EQUAL_STRING("1\r\n", buffer);
+    send_client_msg(
+        sockfd, "SET test_key1 a_very_long_test_valuea_very_long_test_val\r\n",
+        buffer);
+    TEST_ASSERT_EQUAL_STRING("ERROR: Command too large or incomplete\r\n",
+                             buffer);
 
     disconnect_client(sockfd);
 
@@ -351,6 +330,7 @@ void test_cache_api_errors(void) {
 
     pthread_join(server_thread, NULL);
 }
+
 // To-Do
 void test_handle_client_read_and_write(void) {}
 
@@ -361,8 +341,8 @@ int main(void) {
     RUN_TEST(test_run_server_initialization);
     RUN_TEST(test_run_server_multiple_clients);
     RUN_TEST(test_cache_api);
-    // RUN_TEST(test_cache_api_errors);
+    RUN_TEST(test_cache_api_error_command_too_large);
 
-    //  RUN_TEST(test_handle_client_read_and_write);
+    // RUN_TEST(test_handle_client_read_and_write);
     return UNITY_END();
 }
