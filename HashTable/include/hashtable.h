@@ -28,7 +28,7 @@ hash_table_t *hash_table_create(int capacity);
 int hash_table_set(hash_table_t *ht, char *key, void *value, size_t size);
 void *hash_table_get(hash_table_t *ht, char *key);
 void hash_table_print_keys(hash_table_t *ht);
-void hash_table_cleanup(hash_table_t *ht);
+void hash_table_cleanup(hash_table_t *ht, void (*cleanup_callback)(void *));
 int hash_table_remove(hash_table_t *ht, char *key);
 void hash_table_set_resize_flag(int enabled);
 

@@ -44,7 +44,7 @@ void test_hashtable_with_capacity_one(void) {
         TEST_ASSERT_EQUAL_STRING(val11_str, res4);
 
         // PrintKeys(ht);
-        hash_table_cleanup(ht);
+        hash_table_cleanup(ht, NULL);
 }
 
 void test_hashtable_with_capacity_100(void) {
@@ -91,7 +91,7 @@ void test_hashtable_with_capacity_100(void) {
         char *res5 = hash_table_get(ht, key4_str);
         TEST_ASSERT_EQUAL_STRING(val4_str, res5);
 
-        hash_table_cleanup(ht);
+        hash_table_cleanup(ht, NULL);
 }
 
 void test_store_custom_struct_value(void) {
@@ -115,7 +115,7 @@ void test_store_custom_struct_value(void) {
         TEST_ASSERT_EQUAL_FLOAT(value_custom_kv.value, res1->value);
 
         // PrintKeys(ht);
-        hash_table_cleanup(ht);
+        hash_table_cleanup(ht, NULL);
 }
 void test_store_custom_struct_value_ptr(void) {
         hash_table_t *ht = hash_table_create(100);
@@ -139,7 +139,32 @@ void test_store_custom_struct_value_ptr(void) {
 
         // PrintKeys(ht);
         free(value_custom_kv);
-        hash_table_cleanup(ht);
+        hash_table_cleanup(ht, NULL);
+}
+
+typedef struct {
+        char *key;
+        void *value;
+} key_extra_value_t;
+void custom_cleanup(void *arg) {
+        key_extra_value_t *key_extra_value = arg;
+        free(key_extra_value->value);
+}
+
+void test_store_custom_struct_value_with_extra_memory_allocation(void) {
+        hash_table_t *ht = hash_table_create(100);
+
+        char key2_extra_custom_kv[] = "key2_extra_custom_kv";
+        key_extra_value_t value_extra_custom_kv;
+
+        value_extra_custom_kv.key = "inner_extra_key";
+        value_extra_custom_kv.value = strdup("inner_extra_value");
+
+        hash_table_set(ht, key2_extra_custom_kv, &value_extra_custom_kv,
+                       sizeof(value_extra_custom_kv));
+        hash_table_get(ht, key2_extra_custom_kv);
+
+        hash_table_cleanup(ht, custom_cleanup);
 }
 void test_set_malloc_fail(void) {
         int table_size = 100;
@@ -161,7 +186,7 @@ void test_set_malloc_fail(void) {
 
         // Clean up
         set_malloc_fail(0);
-        hash_table_cleanup(ht);
+        hash_table_cleanup(ht, NULL);
 }
 
 void test_delete_entry(void) {
@@ -207,7 +232,7 @@ void test_delete_entry(void) {
         res_int = (int *)hash_table_get(ht, key_int);
         TEST_ASSERT_NULL(res_int);
 
-        hash_table_cleanup(ht);
+        hash_table_cleanup(ht, NULL);
 }
 
 void test_delete_midle_entry(void) {
@@ -266,7 +291,7 @@ void test_delete_midle_entry(void) {
         hash_table_print_keys(ht);
 
         hash_table_set_resize_flag(1);
-        hash_table_cleanup(ht);
+        hash_table_cleanup(ht, NULL);
 }
 
 void test_delete_invalid_entry(void) {
@@ -279,7 +304,7 @@ void test_delete_invalid_entry(void) {
         int delete_result = hash_table_remove(ht, key);
         TEST_ASSERT_EQUAL_INT(-1, delete_result);
 
-        hash_table_cleanup(ht);
+        hash_table_cleanup(ht, NULL);
 }
 
 void test_resize(void) {
@@ -334,7 +359,7 @@ void test_resize(void) {
         // TEST_ASSERT_EQUAL_STRING((ht->table[5])->key, key5);
 
         hash_table_print_keys(ht);
-        hash_table_cleanup(ht);
+        hash_table_cleanup(ht, NULL);
 }
 
 void *thread_func1(void *arg) {
@@ -373,7 +398,7 @@ void test_threading(void) {
         pthread_join(t2, NULL);
 
         hash_table_print_keys(ht);
-        hash_table_cleanup(ht);
+        hash_table_cleanup(ht, NULL);
 }
 
 // a little of mess here, probably i should use a different file
@@ -450,7 +475,7 @@ void test_thread_safety(void) {
         }
 
         // print_keys(ht);
-        hash_table_cleanup(ht);
+        hash_table_cleanup(ht, NULL);
 }
 
 int main(void) {
@@ -464,6 +489,7 @@ int main(void) {
         RUN_TEST(test_threading);
         RUN_TEST(test_thread_safety);
         RUN_TEST(test_store_custom_struct_value_ptr);
+        RUN_TEST(test_store_custom_struct_value_with_extra_memory_allocation);
         RUN_TEST(test_store_custom_struct_value);
         RUN_TEST(test_delete_midle_entry);
         return UNITY_END();

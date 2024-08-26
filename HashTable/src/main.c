@@ -6,6 +6,15 @@ typedef struct {
         float value;
 } key_value_t;
 
+typedef struct {
+        char *key;
+        void *value;
+} key_extra_value_t;
+
+void custom_cleanup(void *arg) {
+        key_extra_value_t *key_extra_value = arg;
+        free(key_extra_value->value);
+}
 // Examples
 int main() {
         hash_table_t *ht = hash_table_create(1);
@@ -16,8 +25,9 @@ int main() {
         char key1_str[] = "key1_str";
         char val1_str[] = "val1";
 
-        int result =
-            hash_table_set(ht, key1_str, val1_str, strlen(val1_str) + 1);
+        int result = hash_table_set(ht, key1_str, val1_str,
+                                    strlen(val1_str) +
+                                        1); // When you use strings use strlen
         assert(result == 0);
         char *res_str = hash_table_get(ht, key1_str);
         assert(res_str != NULL);
@@ -78,5 +88,28 @@ int main() {
         // Print a list of keys for debugging
         hash_table_print_keys(ht);
 
-        hash_table_cleanup(ht);
+        hash_table_cleanup(ht, NULL);
+
+        // Different scenario with new hash table
+        // We store in the key a custom struct which also allocates extra memory
+        // and needs handling
+        ht = hash_table_create(1);
+        char key2_extra_custom_kv[] = "key2_extra_custom_kv";
+        key_extra_value_t value_extra_custom_kv;
+
+        value_extra_custom_kv.key = "inner_extra_key";
+        value_extra_custom_kv.value = strdup("inner_extra_value");
+
+        hash_table_set(ht, key2_extra_custom_kv, &value_extra_custom_kv,
+                       sizeof(value_extra_custom_kv));
+        assert(ht->size == 1);
+        key_extra_value_t *res_extra_custom_kv =
+            hash_table_get(ht, key2_extra_custom_kv);
+        assert(value_extra_custom_kv.key == res_extra_custom_kv->key);
+        assert(strcmp(value_extra_custom_kv.value,
+                      res_extra_custom_kv->value) == 0);
+
+        hash_table_print_keys(ht);
+
+        hash_table_cleanup(ht, custom_cleanup);
 }
