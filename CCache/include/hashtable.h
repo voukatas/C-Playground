@@ -11,7 +11,7 @@
 // Entry struct
 typedef struct hash_entry {
         char *key;
-        char *value;
+        void *value;
         struct hash_entry *next;
 
 } hash_entry_t;

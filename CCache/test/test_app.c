@@ -193,7 +193,7 @@ void test_run_server_initialization(void) {
 
     // Small delay for server to init
     sleep(1);
-    send_client_msg_in_new_conn("SET test_key test_value\r\n", port,
+    send_client_msg_in_new_conn("SET test_key test_value 30\r\n", port,
                                 "127.0.0.1", buffer);
     TEST_ASSERT_EQUAL_STRING("OK\r\n", buffer);
 
@@ -258,11 +258,11 @@ void test_cache_api(void) {
     int sockfd = connect_client(port, ip);
 
     // Test SET command
-    send_client_msg(sockfd, "SET test_key test_value\r\n", buffer);
+    send_client_msg(sockfd, "SET test_key test_value 30\r\n", buffer);
     TEST_ASSERT_EQUAL_STRING("OK\r\n", buffer);
 
     // Test SET command
-    send_client_msg(sockfd, "SET test_key1 test_value1\r\n", buffer);
+    send_client_msg(sockfd, "SET test_key1 test_value1 30\r\n", buffer);
     TEST_ASSERT_EQUAL_STRING("OK\r\n", buffer);
 
     // Test GET command
@@ -316,7 +316,8 @@ void test_cache_api_error_command_too_large(void) {
 
     // Test SET command
     send_client_msg(
-        sockfd, "SET test_key1 a_very_long_test_valuea_very_long_test_val\r\n",
+        sockfd,
+        "SET test_key1 a_very_long_test_valuea_very_long_test_val 30\r\n",
         buffer);
     TEST_ASSERT_EQUAL_STRING("ERROR: Command too large or incomplete\r\n",
                              buffer);
