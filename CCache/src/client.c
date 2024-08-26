@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 #include "../include/ttl.h"
 
@@ -118,6 +119,7 @@ static void process_command(char *command, char *response) {
         response_value = "OK";
         printf("key: %s\n", key);
         printf("value: %s\n", value);
+        printf("ttl_value: %s\n", ttl_value);
 
         ttl_entry_t new_ttl_entry;
         new_ttl_entry.value = strdup(value);
@@ -131,7 +133,7 @@ static void process_command(char *command, char *response) {
         }
         new_ttl_entry.timestamp = time(NULL);
         new_ttl_entry.ttl = atoi(ttl_value);
-        if (new_ttl_entry.ttl <= 1) {
+        if (new_ttl_entry.ttl <= 0) {
             response_value = "ERROR: INVALID TTL";
             snprintf(response, BUFFER_SIZE, "%s\r\n", response_value);
             printf("Processing command response: %s\n", response);
@@ -151,7 +153,16 @@ static void process_command(char *command, char *response) {
         if (ttl_entry == NULL) {
             response_value = "ERROR: KEY NOT FOUND";
         } else {
-            response_value = ttl_entry->value;
+            time_t current_time = time(NULL);
+            if (difftime(current_time, ttl_entry->timestamp) > ttl_entry->ttl) {
+                // Expired
+                free(ttl_entry->value);
+                hash_table_remove(hash_table_main, key);
+                response_value = "ERROR: KEY NOT FOUND";
+            } else {
+                // Valid
+                response_value = ttl_entry->value;
+            }
         }
 
     } else if (strncmp(command_type, "DELETE", 6) == 0 && num_args == 2) {

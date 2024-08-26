@@ -1,6 +1,11 @@
 # CCache
 
-A simple single-threaded event-driven program that wannabe a cache
+A simple single-threaded event-driven program that wannabe a TTL cache
+
+# Features
+- Event-driven, single-thread
+- Uses a Text-Based protocol
+- For resource management it uses a Time-To-Live (TTL) value
 
 # How to run
 ```bash
@@ -39,7 +44,8 @@ make clean
 ```
 ## Manual check
 ```bash
-echo -ne "SET key_test value_test\r\n" | nc localhost 8080
+# 30 seconds TTL
+echo -ne "SET key_test value_test 30\r\n" | nc localhost 8080
 ```
 
 # To-Do

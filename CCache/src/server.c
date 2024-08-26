@@ -9,7 +9,8 @@
 #include "../include/signal_handler.h"
 #include "../include/ttl.h"
 
-static void ttl_hash_table_cleanup(hash_table_t *ht);
+static void custom_cleanup(void *arg);
+// static void ttl_hash_table_cleanup(hash_table_t *ht);
 
 client_node_t *client_list_head = NULL;
 int active_connections = 0;
@@ -178,29 +179,33 @@ static void handle_event(int epoll_fd, struct epoll_event *event) {
     }
 }
 
-static void ttl_hash_table_cleanup(hash_table_t *ht) {
-    pthread_mutex_lock(&ht->hash_table_mutex);
-
-    for (int i = 0; i < ht->capacity; i++) {
-        hash_entry_t *entry = ht->table[i];
-        if (entry == NULL) {
-            continue;
-        }
-        while (entry != NULL) {
-            hash_entry_t *tmp = entry->next;
-            ttl_entry_t *ttl_entry = entry->value;
-            free(ttl_entry->value);
-            free(entry->value);
-            free(entry->key);
-            free(entry);
-            entry = tmp;
-        }
-    }
-    free(ht->table);
-    pthread_mutex_unlock(&ht->hash_table_mutex);
-    pthread_mutex_destroy(&ht->hash_table_mutex);
-    free(ht);
+static void custom_cleanup(void *arg) {
+    ttl_entry_t *ttl_entry = arg;
+    free(ttl_entry->value);
 }
+// static void ttl_hash_table_cleanup(hash_table_t *ht) {
+//     pthread_mutex_lock(&ht->hash_table_mutex);
+//
+//     for (int i = 0; i < ht->capacity; i++) {
+//         hash_entry_t *entry = ht->table[i];
+//         if (entry == NULL) {
+//             continue;
+//         }
+//         while (entry != NULL) {
+//             hash_entry_t *tmp = entry->next;
+//             ttl_entry_t *ttl_entry = entry->value;
+//             free(ttl_entry->value);
+//             free(entry->value);
+//             free(entry->key);
+//             free(entry);
+//             entry = tmp;
+//         }
+//     }
+//     free(ht->table);
+//     pthread_mutex_unlock(&ht->hash_table_mutex);
+//     pthread_mutex_destroy(&ht->hash_table_mutex);
+//     free(ht);
+// }
 
 int run_server(int port) {
     active_connections = 0;
@@ -243,7 +248,7 @@ int run_server(int port) {
     server_event = NULL;
     close(epoll_fd);
     close(server_fd);
-    ttl_hash_table_cleanup(hash_table_main);
+    hash_table_cleanup(hash_table_main, custom_cleanup);
     active_connections = 0;
     printf("SERVER STOPPED\n");
     return 0;

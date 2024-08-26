@@ -289,6 +289,15 @@ void test_cache_api(void) {
     send_client_msg(sockfd, "CONNECTIONS\r\n", buffer);
     TEST_ASSERT_EQUAL_STRING("1\r\n", buffer);
 
+    send_client_msg(sockfd, "SET test_key11 test_value 1\r\n", buffer);
+    TEST_ASSERT_EQUAL_STRING("OK\r\n", buffer);
+
+    // Test GET command
+    sleep(2);
+    send_client_msg(sockfd, "GET test_key11\r\n", buffer);
+    TEST_ASSERT_EQUAL_STRING("ERROR: KEY NOT FOUND\r\n", buffer);
+    // TEST_ASSERT_EQUAL_STRING("test_value\r\n", buffer);
+
     disconnect_client(sockfd);
 
     // sleep(1);

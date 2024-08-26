@@ -239,7 +239,7 @@ void hash_table_print_keys(hash_table_t *ht) {
 }
 
 // CleanUp
-void hash_table_cleanup(hash_table_t *ht) {
+void hash_table_cleanup(hash_table_t *ht, void (*cleanup_callback)(void *)) {
         pthread_mutex_lock(&ht->hash_table_mutex);
 
         for (int i = 0; i < ht->capacity; i++) {
@@ -249,6 +249,10 @@ void hash_table_cleanup(hash_table_t *ht) {
                 }
                 while (entry != NULL) {
                         hash_entry_t *tmp = entry->next;
+                        // check if special handling is needed
+                        if (cleanup_callback) {
+                                cleanup_callback(entry->value);
+                        }
                         free(entry->value);
                         free(entry->key);
                         free(entry);
