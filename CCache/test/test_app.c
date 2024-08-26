@@ -260,6 +260,9 @@ void test_cache_api(void) {
     // Test SET command
     send_client_msg(sockfd, "SET test_key test_value 30\r\n", buffer);
     TEST_ASSERT_EQUAL_STRING("OK\r\n", buffer);
+    // re-set the same key
+    send_client_msg(sockfd, "SET test_key test_value 30\r\n", buffer);
+    TEST_ASSERT_EQUAL_STRING("OK\r\n", buffer);
 
     // Test SET command
     send_client_msg(sockfd, "SET test_key1 test_value1 30\r\n", buffer);

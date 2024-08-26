@@ -6,6 +6,10 @@
 
 #include "../include/ttl.h"
 
+void custom_cleanup(void *arg) {
+    ttl_entry_t *ttl_entry = arg;
+    free(ttl_entry->value);
+}
 void add_client_to_list(client_node_t **head, node_data_t *client_data) {
     client_node_t *new_node = malloc(sizeof(client_node_t));
     if (!new_node) {
@@ -141,7 +145,7 @@ static void process_command(char *command, char *response) {
         }
 
         int error = hash_table_set(hash_table_main, key, &new_ttl_entry,
-                                   sizeof(new_ttl_entry));
+                                   sizeof(new_ttl_entry), custom_cleanup);
         if (error != 0) {
             fprintf(stderr, "failed to allocate memory during set_value");
             response_value = "ERROR: MEMORY ALLOC FAILURE";

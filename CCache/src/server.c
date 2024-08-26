@@ -7,9 +7,7 @@
 #include "../include/client.h"
 #include "../include/config.h"
 #include "../include/signal_handler.h"
-#include "../include/ttl.h"
 
-static void custom_cleanup(void *arg);
 // static void ttl_hash_table_cleanup(hash_table_t *ht);
 
 client_node_t *client_list_head = NULL;
@@ -179,10 +177,6 @@ static void handle_event(int epoll_fd, struct epoll_event *event) {
     }
 }
 
-static void custom_cleanup(void *arg) {
-    ttl_entry_t *ttl_entry = arg;
-    free(ttl_entry->value);
-}
 // static void ttl_hash_table_cleanup(hash_table_t *ht) {
 //     pthread_mutex_lock(&ht->hash_table_mutex);
 //

@@ -24,6 +24,7 @@ void cleanup_all_clients(client_node_t **head);
 void handle_client_read(client_t *client, struct epoll_event *ev, int epoll_fd);
 void handle_client_write(client_t *client, struct epoll_event *ev, int epoll_fd);
 void delete_resources(int epoll_fd, client_t *client, struct epoll_event *ev);
+void custom_cleanup(void *arg);
 
 extern client_node_t *client_list_head;
 extern int active_connections;
