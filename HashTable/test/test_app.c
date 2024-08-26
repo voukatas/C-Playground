@@ -23,22 +23,22 @@ void test_hashtable_with_capacity_one(void) {
         char key3_float[] = "key3_float";
         float val3_float = 3.14;
 
-        hash_table_set(ht, key1_str, val1_str, strlen(val1_str) + 1);
+        hash_table_set(ht, key1_str, val1_str, strlen(val1_str) + 1, NULL);
         TEST_ASSERT_EQUAL_INT(1, ht->size);
         char *res1 = hash_table_get(ht, key1_str);
         TEST_ASSERT_EQUAL_STRING(val1_str, res1);
 
-        hash_table_set(ht, key2_int, &val2_int, sizeof(val2_int));
+        hash_table_set(ht, key2_int, &val2_int, sizeof(val2_int), NULL);
         TEST_ASSERT_EQUAL_INT(2, ht->size);
         int *res2 = (int *)hash_table_get(ht, key2_int);
         TEST_ASSERT_EQUAL_INT(val2_int, *res2);
 
-        hash_table_set(ht, key3_float, &val3_float, sizeof(val3_float));
+        hash_table_set(ht, key3_float, &val3_float, sizeof(val3_float), NULL);
         TEST_ASSERT_EQUAL_INT(3, ht->size);
         float *res3 = (float *)hash_table_get(ht, key3_float);
         TEST_ASSERT_EQUAL_FLOAT(val3_float, *res3);
 
-        hash_table_set(ht, key1_str, val11_str, strlen(val11_str) + 1);
+        hash_table_set(ht, key1_str, val11_str, strlen(val11_str) + 1, NULL);
         TEST_ASSERT_EQUAL_INT(3, ht->size);
         char *res4 = hash_table_get(ht, key1_str);
         TEST_ASSERT_EQUAL_STRING(val11_str, res4);
@@ -63,22 +63,22 @@ void test_hashtable_with_capacity_100(void) {
         char key4_str[] = "key4_str";
         char val4_str[100] = "val4";
 
-        hash_table_set(ht, key1_str, val1_str, strlen(val1_str) + 1);
+        hash_table_set(ht, key1_str, val1_str, strlen(val1_str) + 1, NULL);
         TEST_ASSERT_EQUAL_INT(1, ht->size);
         char *res1 = hash_table_get(ht, key1_str);
         TEST_ASSERT_EQUAL_STRING(val1_str, res1);
 
-        hash_table_set(ht, key2_int, &val2_int, sizeof(val2_int));
+        hash_table_set(ht, key2_int, &val2_int, sizeof(val2_int), NULL);
         TEST_ASSERT_EQUAL_INT(2, ht->size);
         int *res2 = (int *)hash_table_get(ht, key2_int);
         TEST_ASSERT_EQUAL_INT(val2_int, *res2);
 
-        hash_table_set(ht, key3_float, &val3_float, sizeof(val3_float));
+        hash_table_set(ht, key3_float, &val3_float, sizeof(val3_float), NULL);
         TEST_ASSERT_EQUAL_INT(3, ht->size);
         float *res3 = (float *)hash_table_get(ht, key3_float);
         TEST_ASSERT_EQUAL_FLOAT(val3_float, *res3);
 
-        hash_table_set(ht, key1_str, val11_str, strlen(val11_str) + 1);
+        hash_table_set(ht, key1_str, val11_str, strlen(val11_str) + 1, NULL);
         TEST_ASSERT_EQUAL_INT(3, ht->size);
         char *res4 = hash_table_get(ht, key1_str);
         TEST_ASSERT_EQUAL_STRING(val11_str, res4);
@@ -86,7 +86,7 @@ void test_hashtable_with_capacity_100(void) {
         //
         // printf("---- sizeof: %ld\n", sizeof(val4_str));
         // printf("---- strlen: %ld\n", strlen(val4_str));
-        hash_table_set(ht, key4_str, val4_str, strlen(val4_str) + 1);
+        hash_table_set(ht, key4_str, val4_str, strlen(val4_str) + 1, NULL);
         // TEST_ASSERT_EQUAL_INT(1, ht->size);
         char *res5 = hash_table_get(ht, key4_str);
         TEST_ASSERT_EQUAL_STRING(val4_str, res5);
@@ -108,7 +108,7 @@ void test_store_custom_struct_value(void) {
         value_custom_kv.value = 3.14;
 
         hash_table_set(ht, key1_custom_kv, &value_custom_kv,
-                       sizeof(value_custom_kv));
+                       sizeof(value_custom_kv), NULL);
         TEST_ASSERT_EQUAL_INT(1, ht->size);
         key_value_t *res1 = hash_table_get(ht, key1_custom_kv);
         TEST_ASSERT_EQUAL_STRING(value_custom_kv.key, res1->key);
@@ -131,7 +131,7 @@ void test_store_custom_struct_value_ptr(void) {
         value_custom_kv->value = 3.14;
 
         hash_table_set(ht, key1_custom_kv, value_custom_kv,
-                       sizeof(*value_custom_kv));
+                       sizeof(*value_custom_kv), NULL);
         TEST_ASSERT_EQUAL_INT(1, ht->size);
         key_value_t *res1 = hash_table_get(ht, key1_custom_kv);
         TEST_ASSERT_EQUAL_STRING("inner_key", res1->key);
@@ -160,8 +160,15 @@ void test_store_custom_struct_value_with_extra_memory_allocation(void) {
         value_extra_custom_kv.key = "inner_extra_key";
         value_extra_custom_kv.value = strdup("inner_extra_value");
 
+        key_extra_value_t value_extra_custom_kv3;
+
+        value_extra_custom_kv3.key = "inner_extra_key";
+        value_extra_custom_kv3.value = strdup("inner_extra_value3");
         hash_table_set(ht, key2_extra_custom_kv, &value_extra_custom_kv,
-                       sizeof(value_extra_custom_kv));
+                       sizeof(value_extra_custom_kv), custom_cleanup);
+        hash_table_set(ht, key2_extra_custom_kv, &value_extra_custom_kv3,
+                       sizeof(value_extra_custom_kv3), custom_cleanup);
+
         hash_table_get(ht, key2_extra_custom_kv);
 
         hash_table_cleanup(ht, custom_cleanup);
@@ -175,7 +182,7 @@ void test_set_malloc_fail(void) {
 
         char key[] = "key";
         char val[] = "val";
-        int result = hash_table_set(ht, key, val, strlen(val) + 1);
+        int result = hash_table_set(ht, key, val, strlen(val) + 1, NULL);
 
         TEST_ASSERT_EQUAL_INT(-1, result);
         TEST_ASSERT_EQUAL_INT(0, ht->size);
@@ -196,7 +203,7 @@ void test_delete_entry(void) {
         char key[] = "key";
         char val[] = "val";
 
-        int set_result = hash_table_set(ht, key, val, strlen(val) + 1);
+        int set_result = hash_table_set(ht, key, val, strlen(val) + 1, NULL);
         TEST_ASSERT_EQUAL_INT(1, ht->size);
         TEST_ASSERT_EQUAL_INT(0, set_result);
 
@@ -215,7 +222,8 @@ void test_delete_entry(void) {
 
         char key_int[] = "key_int";
         int val_int = 2;
-        set_result = hash_table_set(ht, key_int, &val_int, sizeof(val_int));
+        set_result =
+            hash_table_set(ht, key_int, &val_int, sizeof(val_int), NULL);
         TEST_ASSERT_EQUAL_INT(1, ht->size);
         TEST_ASSERT_EQUAL_INT(0, set_result);
 
@@ -243,7 +251,7 @@ void test_delete_midle_entry(void) {
         char key[] = "key";
         char val[] = "val";
 
-        int set_result = hash_table_set(ht, key, val, strlen(val) + 1);
+        int set_result = hash_table_set(ht, key, val, strlen(val) + 1, NULL);
         TEST_ASSERT_EQUAL_INT(1, ht->size);
         TEST_ASSERT_EQUAL_INT(0, set_result);
 
@@ -253,7 +261,8 @@ void test_delete_midle_entry(void) {
 
         char key_int[] = "key_int";
         int val_int = 2;
-        set_result = hash_table_set(ht, key_int, &val_int, sizeof(val_int));
+        set_result =
+            hash_table_set(ht, key_int, &val_int, sizeof(val_int), NULL);
         TEST_ASSERT_EQUAL_INT(2, ht->size);
         TEST_ASSERT_EQUAL_INT(0, set_result);
 
@@ -273,7 +282,7 @@ void test_delete_midle_entry(void) {
         value_custom_kv.value = 3.14;
 
         hash_table_set(ht, key1_custom_kv, &value_custom_kv,
-                       sizeof(value_custom_kv));
+                       sizeof(value_custom_kv), NULL);
         TEST_ASSERT_EQUAL_INT(3, ht->size);
         key_value_t *res_custom_kv = hash_table_get(ht, key1_custom_kv);
         TEST_ASSERT_EQUAL_STRING(res_custom_kv->key, value_custom_kv.key);
@@ -318,19 +327,19 @@ void test_resize(void) {
         char val[] = "val";
 
         // set the values and check that the size increased
-        hash_table_set(ht, key1, val, strlen(key1) + 1);
+        hash_table_set(ht, key1, val, strlen(key1) + 1, NULL);
         TEST_ASSERT_EQUAL_INT(1, ht->size);
 
-        hash_table_set(ht, key2, val, strlen(key2) + 1);
+        hash_table_set(ht, key2, val, strlen(key2) + 1, NULL);
         TEST_ASSERT_EQUAL_INT(2, ht->size);
 
-        hash_table_set(ht, key3, val, strlen(key3) + 1);
+        hash_table_set(ht, key3, val, strlen(key3) + 1, NULL);
         TEST_ASSERT_EQUAL_INT(3, ht->size);
 
-        hash_table_set(ht, key4, val, strlen(key4) + 1);
+        hash_table_set(ht, key4, val, strlen(key4) + 1, NULL);
         TEST_ASSERT_EQUAL_INT(4, ht->size);
 
-        hash_table_set(ht, key5, val, strlen(key5) + 1);
+        hash_table_set(ht, key5, val, strlen(key5) + 1, NULL);
         TEST_ASSERT_EQUAL_INT(5, ht->size);
 
         // check that the capacity was increased
@@ -368,7 +377,7 @@ void *thread_func1(void *arg) {
                 // pthread_mutex_lock(&counter_mutex);
                 // set_value(ht, "key1", "val1");
                 // pthread_mutex_unlock(&counter_mutex);
-                hash_table_set(ht, "key1", "val1", strlen("val1") + 1);
+                hash_table_set(ht, "key1", "val1", strlen("val1") + 1, NULL);
         }
         return NULL;
 }
@@ -379,7 +388,7 @@ void *thread_func2(void *arg) {
                 // pthread_mutex_lock(&counter_mutex);
                 // set_value(ht, "key2", "val1");
                 // pthread_mutex_unlock(&counter_mutex);
-                hash_table_set(ht, "key1", "val1", strlen("val1") + 1);
+                hash_table_set(ht, "key1", "val1", strlen("val1") + 1, NULL);
         }
         return NULL;
 }
@@ -417,7 +426,7 @@ void *thread_set_value(void *arg) {
                 char key[64];
                 snprintf(key, sizeof(key), "%s_%d", data->key, i);
                 hash_table_set(data->ht, key, data->value,
-                               strlen(data->value) + 1);
+                               strlen(data->value) + 1, NULL);
         }
         return NULL;
 }

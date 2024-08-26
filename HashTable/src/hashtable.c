@@ -56,7 +56,8 @@ static int hash(char *key, int capacity) {
 }
 
 // Set
-int hash_table_set(hash_table_t *ht, char *key, void *value, size_t size) {
+int hash_table_set(hash_table_t *ht, char *key, void *value, size_t size,
+                   void (*cleanup_callback)(void *)) {
         if (key == NULL || value == NULL) {
                 printf("invalid memory reference\n");
                 return -1;
@@ -92,6 +93,10 @@ int hash_table_set(hash_table_t *ht, char *key, void *value, size_t size) {
                         // prevent data loss
                         memcpy(new_value, value, size);
 
+                        // check if special handling is needed
+                        if (cleanup_callback) {
+                                cleanup_callback(entry->value);
+                        }
                         free(entry->value);
 
                         entry->value = new_value;
