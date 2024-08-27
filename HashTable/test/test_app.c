@@ -325,7 +325,7 @@ void test_delete_midle_entry(void) {
         res_int = (int *)hash_table_get(ht, key_int);
         TEST_ASSERT_NULL(res_int);
 
-        hash_table_print_keys(ht);
+        // hash_table_print_keys(ht);
 
         hash_table_set_resize_flag(1);
         hash_table_cleanup(ht, NULL);
@@ -395,7 +395,8 @@ void test_resize(void) {
         TEST_ASSERT_EQUAL_STRING(val, res5);
         // TEST_ASSERT_EQUAL_STRING((ht->table[5])->key, key5);
 
-        hash_table_print_keys(ht);
+        long keys_count = hash_table_print_keys(ht);
+        TEST_ASSERT_EQUAL_INT(5, keys_count);
         hash_table_cleanup(ht, NULL);
 }
 
@@ -434,7 +435,7 @@ void test_threading(void) {
         pthread_join(t1, NULL);
         pthread_join(t2, NULL);
 
-        hash_table_print_keys(ht);
+        // hash_table_print_keys(ht);
         hash_table_cleanup(ht, NULL);
 }
 

@@ -87,7 +87,8 @@ int main() {
         assert(res_doesnt_exist == NULL);
 
         // Print a list of keys for debugging
-        hash_table_print_keys(ht);
+        long num_of_keys = hash_table_print_keys(ht);
+        printf("Num of keys: %ld\n", num_of_keys);
 
         hash_table_cleanup(ht, NULL);
 
@@ -121,7 +122,8 @@ int main() {
                       res_extra_custom_kv->value) == 0);
         hash_table_remove(ht, key2_extra_custom_kv, custom_cleanup);
 
-        hash_table_print_keys(ht);
+        num_of_keys = hash_table_print_keys(ht);
+        printf("Num of keys: %ld\n", num_of_keys);
 
         hash_table_cleanup(ht, custom_cleanup);
 }

@@ -229,8 +229,9 @@ int hash_table_resize(hash_table_t *ht) {
         return 0;
 }
 
-// Keys
-void hash_table_print_keys(hash_table_t *ht) {
+// Prints all the Keys and returns the total number
+long hash_table_print_keys(hash_table_t *ht) {
+        long keys_count = 0;
         pthread_mutex_lock(&ht->hash_table_mutex);
 
         printf("Keys:\n");
@@ -241,11 +242,13 @@ void hash_table_print_keys(hash_table_t *ht) {
                 }
 
                 while (entry != NULL) {
-                        printf("position: %d key: %s\n", i, entry->key);
+                        printf("Position: %d key: %s\n", i, entry->key);
+                        keys_count++;
                         entry = entry->next;
                 }
         }
         pthread_mutex_unlock(&ht->hash_table_mutex);
+        return keys_count;
 }
 
 // CleanUp
