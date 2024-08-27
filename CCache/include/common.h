@@ -4,6 +4,13 @@
 #include "config.h"
 #include <unistd.h>
 
+typedef enum {
+        EVENT_SERVER,
+        EVENT_CLIENT,
+        EVENT_TIMER,
+
+} EventType;
+
 typedef struct {
     int fd;
     char read_buffer[BUFFER_SIZE];
@@ -15,9 +22,9 @@ typedef struct {
 } client_t;
 
 typedef struct {
-        int node_type; // 0 for server, 1 for client and 2 for timer
+        int event_type; // 0 for server, 1 for client and 2 for timer
         union {
-                int server_fd;    // Use this if server or timer
+                int fd;    // Use this if server or timer
                 client_t *client; // Use this if client
         } data;
 } node_data_t;

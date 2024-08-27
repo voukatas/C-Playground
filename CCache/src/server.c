@@ -109,8 +109,8 @@ static int setup_epoll(int server_fd, int tfd) {
         close(server_fd);
         exit(EXIT_FAILURE);
     }
-    server_event->node_type = 0;
-    server_event->data.server_fd = server_fd;
+    server_event->event_type = EVENT_SERVER;
+    server_event->data.fd = server_fd;
 
     struct epoll_event ev;
     ev.events = EPOLLIN;  // set flag to listen for read events on server socket
@@ -139,8 +139,8 @@ static int setup_epoll(int server_fd, int tfd) {
         timer_event = NULL;
         exit(EXIT_FAILURE);
     }
-    timer_event->node_type = 2;
-    timer_event->data.server_fd = tfd;
+    timer_event->event_type = EVENT_TIMER;
+    timer_event->data.fd = tfd;
     // The data.fd and data.ptr is union....
     // tev.data.fd = tfd;
     tev.data.ptr = timer_event;
@@ -163,12 +163,12 @@ static void handle_event(int epoll_fd, struct epoll_event *event) {
     node_data_t *event_data = (node_data_t *)event->data.ptr;
     // printf("------------- event value:%p\n", event);
     // printf("------------- event_data value:%p\n", event_data);
-    printf("------------- event_data node type:%d\n", event_data->node_type);
+    printf("------------- event_data node type:%d\n", event_data->event_type);
 
-    if (event_data != NULL && event_data->node_type == 0) {
+    if (event_data != NULL && event_data->event_type == EVENT_SERVER) {
         // Accept a new client connection
         int client_socket =
-            accept(event_data->data.server_fd, (struct sockaddr *)&address,
+            accept(event_data->data.fd, (struct sockaddr *)&address,
                    (socklen_t *)&addrlen);
         if (client_socket < 0) {
             perror("Accept failed");
@@ -199,7 +199,7 @@ static void handle_event(int epoll_fd, struct epoll_event *event) {
             client = NULL;
             return;
         }
-        client_event->node_type = 1;
+        client_event->event_type = EVENT_CLIENT;
         client_event->data.client = client;
 
         // Add the client socket to epoll
@@ -220,7 +220,7 @@ static void handle_event(int epoll_fd, struct epoll_event *event) {
         // Add client to the linked list for cleanup on shutdown
         add_client_to_list(&client_list_head, client_event);
         printf("Added Client: %p\n", client);
-    } else if (event_data != NULL && event_data->node_type == 1) {
+    } else if (event_data != NULL && event_data->event_type == EVENT_CLIENT) {
         client_t *client = event_data->data.client;
 
         //  Handle client disconnect or error
@@ -240,7 +240,7 @@ static void handle_event(int epoll_fd, struct epoll_event *event) {
             handle_client_write(client, event, epoll_fd);
         }
 
-    } else if (event_data != NULL && event_data->node_type == 2) {
+    } else if (event_data != NULL && event_data->event_type == EVENT_TIMER) {
         printf("inside else if - timer_fd: %d\n", timer_fd);
         uint64_t expirations;
         ssize_t bytes = read(timer_fd, &expirations,
