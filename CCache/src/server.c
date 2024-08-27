@@ -77,9 +77,9 @@ static int setup_cleanup_timerfd() {
         return -1;
     }
     struct itimerspec ts;
-    ts.it_value.tv_sec = 10;  // First trigger
+    ts.it_value.tv_sec = CLEAN_UP_TIME;  // First trigger
     ts.it_value.tv_nsec = 0;
-    ts.it_interval.tv_sec = 10;  // Interval
+    ts.it_interval.tv_sec = CLEAN_UP_TIME;  // Interval
     ts.it_interval.tv_nsec = 0;
 
     if (timerfd_settime(tfd, 0, &ts, NULL) == -1) {
@@ -89,6 +89,7 @@ static int setup_cleanup_timerfd() {
     }
 
     printf("timer_fd: %d\n", tfd);
+    printf("CLEAN_UP_TIME: %d\n", CLEAN_UP_TIME);
 
     return tfd;
 }
@@ -283,7 +284,7 @@ int run_server(int port) {
     active_connections = 0;
     keep_running = 1;
     // Create hashtable
-    hash_table_main = hash_table_create(1000);
+    hash_table_main = hash_table_create(HASH_TABLE_STARTING_SIZE);
     //  Set up signal handling
     setup_signal_handling();
     int server_fd = setup_server_socket(port);

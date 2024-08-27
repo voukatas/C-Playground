@@ -181,6 +181,11 @@ static void process_command(char *command, char *response) {
         snprintf(response, BUFFER_SIZE, "%d\r\n", active_connections);
         printf("Processing command response: %s\n", response);
         return;
+    } else if (strncmp(command_type, "KEYS_NUM", 8) == 0 && num_args == 1) {
+        // I need to rethink this thing
+        snprintf(response, BUFFER_SIZE, "%d\r\n", hash_table_main->size);
+        printf("Processing command response: %s\n", response);
+        return;
     } else {
         // Unknown command
         response_value = "ERROR: UNKNOWN OR MALFORMED COMMAND";
