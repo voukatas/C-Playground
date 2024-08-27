@@ -156,7 +156,8 @@ void *hash_table_get(hash_table_t *ht, char *key) {
         return NULL;
 }
 
-int hash_table_remove(hash_table_t *ht, char *key) {
+int hash_table_remove(hash_table_t *ht, char *key,
+                      void (*cleanup_callback)(void *)) {
         pthread_mutex_lock(&ht->hash_table_mutex);
 
         int address = hash(key, ht->capacity);
@@ -172,6 +173,10 @@ int hash_table_remove(hash_table_t *ht, char *key) {
                                 prev_entry->next = current_entry->next;
                         }
                         free(current_entry->key);
+                        // check if special handling is needed
+                        if (cleanup_callback) {
+                                cleanup_callback(current_entry->value);
+                        }
                         free(current_entry->value);
                         free(current_entry);
                         ht->size--;

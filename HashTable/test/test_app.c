@@ -173,6 +173,34 @@ void test_store_custom_struct_value_with_extra_memory_allocation(void) {
 
         hash_table_cleanup(ht, custom_cleanup);
 }
+
+void test_remove_custom_struct_value_with_extra_memory_allocation(void) {
+        hash_table_t *ht = hash_table_create(100);
+
+        char key2_extra_custom_kv[] = "key2_extra_custom_kv";
+        key_extra_value_t value_extra_custom_kv;
+
+        value_extra_custom_kv.key = "inner_extra_key";
+        value_extra_custom_kv.value = strdup("inner_extra_value");
+
+        key_extra_value_t value_extra_custom_kv3;
+
+        value_extra_custom_kv3.key = "inner_extra_key";
+        value_extra_custom_kv3.value = strdup("inner_extra_value3");
+        hash_table_set(ht, key2_extra_custom_kv, &value_extra_custom_kv,
+                       sizeof(value_extra_custom_kv), custom_cleanup);
+        hash_table_set(ht, key2_extra_custom_kv, &value_extra_custom_kv3,
+                       sizeof(value_extra_custom_kv3), custom_cleanup);
+
+        hash_table_get(ht, key2_extra_custom_kv);
+
+        hash_table_remove(ht, key2_extra_custom_kv, custom_cleanup);
+        free(ht->table);
+        pthread_mutex_destroy(&ht->hash_table_mutex);
+        free(ht);
+
+        // hash_table_cleanup(ht, custom_cleanup);
+}
 void test_set_malloc_fail(void) {
         int table_size = 100;
         hash_table_t *ht = hash_table_create(table_size);
@@ -212,7 +240,7 @@ void test_delete_entry(void) {
         TEST_ASSERT_EQUAL_STRING(val, res);
 
         // Delete the entry
-        int delete_result = hash_table_remove(ht, key);
+        int delete_result = hash_table_remove(ht, key, NULL);
         TEST_ASSERT_EQUAL_INT(0, ht->size);
         TEST_ASSERT_EQUAL_INT(0, delete_result);
 
@@ -232,7 +260,7 @@ void test_delete_entry(void) {
         TEST_ASSERT_EQUAL_INT(val_int, *res_int);
 
         // Delete the entry
-        int delete_result_int = hash_table_remove(ht, key_int);
+        int delete_result_int = hash_table_remove(ht, key_int, NULL);
         TEST_ASSERT_EQUAL_INT(0, ht->size);
         TEST_ASSERT_EQUAL_INT(0, delete_result_int);
 
@@ -289,7 +317,7 @@ void test_delete_midle_entry(void) {
         TEST_ASSERT_EQUAL_FLOAT(res_custom_kv->value, value_custom_kv.value);
 
         // Delete Middle entry
-        int delete_result_int = hash_table_remove(ht, key_int);
+        int delete_result_int = hash_table_remove(ht, key_int, NULL);
         TEST_ASSERT_EQUAL_INT(2, ht->size);
         TEST_ASSERT_EQUAL_INT(0, delete_result_int);
 
@@ -310,7 +338,7 @@ void test_delete_invalid_entry(void) {
         char key[] = "key";
 
         // Delete the entry
-        int delete_result = hash_table_remove(ht, key);
+        int delete_result = hash_table_remove(ht, key, NULL);
         TEST_ASSERT_EQUAL_INT(-1, delete_result);
 
         hash_table_cleanup(ht, NULL);
@@ -499,6 +527,7 @@ int main(void) {
         RUN_TEST(test_thread_safety);
         RUN_TEST(test_store_custom_struct_value_ptr);
         RUN_TEST(test_store_custom_struct_value_with_extra_memory_allocation);
+        RUN_TEST(test_remove_custom_struct_value_with_extra_memory_allocation);
         RUN_TEST(test_store_custom_struct_value);
         RUN_TEST(test_delete_midle_entry);
         return UNITY_END();

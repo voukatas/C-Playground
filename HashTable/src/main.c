@@ -59,7 +59,7 @@ int main() {
         printf("result float: %f\n", *res_float);
         assert(ht->size == 3);
 
-        int delete_result = hash_table_remove(ht, key3_float);
+        int delete_result = hash_table_remove(ht, key3_float, NULL);
         assert(delete_result == 0);
         assert(ht->size == 2);
 
@@ -119,6 +119,7 @@ int main() {
         assert(value_extra_custom_kv3.key == res_extra_custom_kv->key);
         assert(strcmp(value_extra_custom_kv3.value,
                       res_extra_custom_kv->value) == 0);
+        hash_table_remove(ht, key2_extra_custom_kv, custom_cleanup);
 
         hash_table_print_keys(ht);
 
