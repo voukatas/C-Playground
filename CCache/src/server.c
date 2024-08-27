@@ -8,14 +8,12 @@
 #include "../include/config.h"
 #include "../include/signal_handler.h"
 
-// static void ttl_hash_table_cleanup(hash_table_t *ht);
-
 client_node_t *client_list_head = NULL;
 int active_connections = 0;
 node_data_t *server_event = NULL;
 hash_table_t *hash_table_main = NULL;
 
-void set_non_blocking(int socket) {
+static void set_non_blocking(int socket) {
     int flags = fcntl(socket, F_GETFL, 0);
     fcntl(socket, F_SETFL, flags | O_NONBLOCK);
 }
@@ -177,30 +175,6 @@ static void handle_event(int epoll_fd, struct epoll_event *event) {
     }
 }
 
-// static void ttl_hash_table_cleanup(hash_table_t *ht) {
-//     pthread_mutex_lock(&ht->hash_table_mutex);
-//
-//     for (int i = 0; i < ht->capacity; i++) {
-//         hash_entry_t *entry = ht->table[i];
-//         if (entry == NULL) {
-//             continue;
-//         }
-//         while (entry != NULL) {
-//             hash_entry_t *tmp = entry->next;
-//             ttl_entry_t *ttl_entry = entry->value;
-//             free(ttl_entry->value);
-//             free(entry->value);
-//             free(entry->key);
-//             free(entry);
-//             entry = tmp;
-//         }
-//     }
-//     free(ht->table);
-//     pthread_mutex_unlock(&ht->hash_table_mutex);
-//     pthread_mutex_destroy(&ht->hash_table_mutex);
-//     free(ht);
-// }
-
 int run_server(int port) {
     active_connections = 0;
     keep_running = 1;
@@ -214,6 +188,9 @@ int run_server(int port) {
     printf("Server is listening on port %d\n", port);
 
     struct epoll_event events[MAX_EVENTS];
+
+    // Start cleanup thread
+    // start_ttl_cleanup_thread(hash_table_main);
 
     // Event Loop
     while (atomic_load(&keep_running)) {
@@ -244,6 +221,7 @@ int run_server(int port) {
     close(server_fd);
     hash_table_cleanup(hash_table_main, custom_cleanup);
     active_connections = 0;
+    // pthread_join(cleanup_thread, NULL);
     printf("SERVER STOPPED\n");
     return 0;
 }

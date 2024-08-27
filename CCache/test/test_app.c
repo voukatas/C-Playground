@@ -183,7 +183,7 @@ void send_client_msg_in_new_conn(char *msg, int port, char *ip, char *buffer) {
 }
 
 void test_run_server_initialization(void) {
-    handle_shutdown_signal(1);
+    set_event_loop_state(1);
     pthread_t server_thread;
     int port = 8080;
 
@@ -199,7 +199,7 @@ void test_run_server_initialization(void) {
 
     // To shutdown the event loop
     // sleep(1);
-    handle_shutdown_signal(0);
+    set_event_loop_state(0);
     connect_disconnect_client(port, "127.0.0.1");
 
     pthread_join(server_thread, NULL);
@@ -209,7 +209,7 @@ void test_run_server_initialization(void) {
 // covers the branch of code where a node-client from the middle of the linked
 // list is removed
 void test_run_server_multiple_clients(void) {
-    handle_shutdown_signal(1);
+    set_event_loop_state(1);
     pthread_t server_thread;
     int port = 8080;
     char *ip = "127.0.0.1";
@@ -236,14 +236,14 @@ void test_run_server_multiple_clients(void) {
 
     // sleep(1);
     //   To shutdown the event loop
-    handle_shutdown_signal(0);
+    set_event_loop_state(0);
     connect_disconnect_client(port, "127.0.0.1");
 
     pthread_join(server_thread, NULL);
 }
 
 void test_cache_api(void) {
-    handle_shutdown_signal(1);
+    set_event_loop_state(1);
     pthread_t server_thread;
     int port = 8080;
     char *ip = "127.0.0.1";
@@ -305,14 +305,14 @@ void test_cache_api(void) {
 
     // sleep(1);
     //   To shutdown the event loop
-    handle_shutdown_signal(0);
+    set_event_loop_state(0);
     connect_disconnect_client(port, "127.0.0.1");
 
     pthread_join(server_thread, NULL);
 }
 
 void test_cache_api_error_command_too_large(void) {
-    handle_shutdown_signal(1);
+    set_event_loop_state(1);
     pthread_t server_thread;
     int port = 8080;
     char *ip = "127.0.0.1";
@@ -338,7 +338,7 @@ void test_cache_api_error_command_too_large(void) {
 
     // sleep(1);
     //   To shutdown the event loop
-    handle_shutdown_signal(0);
+    set_event_loop_state(0);
     connect_disconnect_client(port, "127.0.0.1");
 
     pthread_join(server_thread, NULL);
