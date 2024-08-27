@@ -1,8 +1,12 @@
 #include "../include/server.h"
 
 #include <arpa/inet.h>
+#include <bits/time.h>
 #include <fcntl.h>
+#include <stdio.h>
 #include <sys/epoll.h>
+#include <sys/timerfd.h>
+#include <time.h>
 
 #include "../include/client.h"
 #include "../include/config.h"
@@ -11,7 +15,11 @@
 client_node_t *client_list_head = NULL;
 int active_connections = 0;
 node_data_t *server_event = NULL;
+node_data_t *timer_event = NULL;
 hash_table_t *hash_table_main = NULL;
+int timer_fd = 0;
+
+void hash_table_cleanup_expired(hash_table_t *ht);
 
 static void set_non_blocking(int socket) {
     int flags = fcntl(socket, F_GETFL, 0);
@@ -60,7 +68,32 @@ static int setup_server_socket(int port) {
     return server_fd;
 }
 
-static int setup_epoll(int server_fd) {
+// A function that sets a timer using a file descriptor to trigger the cleanupof
+// the hashtable
+static int setup_cleanup_timerfd() {
+    int tfd = timerfd_create(CLOCK_MONOTONIC, 0);
+    if (tfd == -1) {
+        perror("timerfd_create failed");
+        return -1;
+    }
+    struct itimerspec ts;
+    ts.it_value.tv_sec = 10;  // First trigger
+    ts.it_value.tv_nsec = 0;
+    ts.it_interval.tv_sec = 10;  // Interval
+    ts.it_interval.tv_nsec = 0;
+
+    if (timerfd_settime(tfd, 0, &ts, NULL) == -1) {
+        perror("timerfd_settime failed");
+        close(tfd);
+        return -1;
+    }
+
+    printf("timer_fd: %d\n", tfd);
+
+    return tfd;
+}
+
+static int setup_epoll(int server_fd, int tfd) {
     int epoll_fd = epoll_create1(0);  // a kernel obj that keeps track of
                                       // multiple fds and notifies on events
     if (epoll_fd == -1) {
@@ -85,6 +118,36 @@ static int setup_epoll(int server_fd) {
         perror("Epoll ctl add failed");
         close(server_fd);
         close(epoll_fd);
+        close(timer_fd);
+        free(server_event);
+        server_event = NULL;
+        exit(EXIT_FAILURE);
+    }
+
+    // Add timer_fd to epoll
+    struct epoll_event tev;
+    tev.events = EPOLLIN;
+    timer_event = malloc(sizeof(node_data_t));
+    if (!timer_event) {
+        perror("malloc failed");
+        close(server_fd);
+        close(timer_fd);
+        close(epoll_fd);
+        free(server_event);
+        server_event = NULL;
+        timer_event = NULL;
+        exit(EXIT_FAILURE);
+    }
+    timer_event->node_type = 2;
+    timer_event->data.server_fd = tfd;
+    // The data.fd and data.ptr is union....
+    // tev.data.fd = tfd;
+    tev.data.ptr = timer_event;
+    printf("tfd %d\n", tfd);
+    if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, tfd, &tev) == -1) {
+        perror("Epoll ctl add failed");
+        close(server_fd);
+        close(epoll_fd);
         free(server_event);
         server_event = NULL;
         exit(EXIT_FAILURE);
@@ -97,8 +160,11 @@ static void handle_event(int epoll_fd, struct epoll_event *event) {
     struct sockaddr_in address;
     int addrlen = sizeof(address);
     node_data_t *event_data = (node_data_t *)event->data.ptr;
+    // printf("------------- event value:%p\n", event);
+    // printf("------------- event_data value:%p\n", event_data);
+    printf("------------- event_data node type:%d\n", event_data->node_type);
 
-    if (event_data->node_type == 0) {
+    if (event_data != NULL && event_data->node_type == 0) {
         // Accept a new client connection
         int client_socket =
             accept(event_data->data.server_fd, (struct sockaddr *)&address,
@@ -153,7 +219,7 @@ static void handle_event(int epoll_fd, struct epoll_event *event) {
         // Add client to the linked list for cleanup on shutdown
         add_client_to_list(&client_list_head, client_event);
         printf("Added Client: %p\n", client);
-    } else {
+    } else if (event_data != NULL && event_data->node_type == 1) {
         client_t *client = event_data->data.client;
 
         //  Handle client disconnect or error
@@ -172,7 +238,45 @@ static void handle_event(int epoll_fd, struct epoll_event *event) {
             printf("Ready to write\n");
             handle_client_write(client, event, epoll_fd);
         }
+
+    } else if (event_data != NULL && event_data->node_type == 2) {
+        printf("inside else if - timer_fd: %d\n", timer_fd);
+        uint64_t expirations;
+        ssize_t bytes = read(timer_fd, &expirations,
+                             sizeof(expirations));  // Acknowledge the timer
+        if (bytes == -1) {
+            perror("read from timer_fd failed");
+            return;
+        }
+        // else if (bytes != sizeof(expirations)) {
+        //     fprintf(stderr, "Partial read from timer_fd\n");
+        //     return;
+        // }
+        hash_table_cleanup_expired(hash_table_main);
     }
+}
+
+void hash_table_cleanup_expired(hash_table_t *ht) {
+    printf("---- CleanUp Triggered\n");
+
+    time_t current_time = time(NULL);
+
+    for (int i = 0; i < ht->capacity; i++) {
+        hash_entry_t *entry = ht->table[i];
+        while (entry != NULL) {
+            ttl_entry_t *ttl_entry_node = entry->value;
+            hash_entry_t *temp = entry->next;
+            if (difftime(current_time, ttl_entry_node->timestamp) >
+                ttl_entry_node->ttl) {
+                //  hash_table_remove will remove also the entry node
+                printf("---- CleanUp Key: %s\n", entry->key);
+                hash_table_remove(hash_table_main, entry->key, custom_cleanup);
+            }
+            entry = temp;
+        }
+    }
+
+    printf("---- CleanUp Ended\n");
 }
 
 int run_server(int port) {
@@ -183,7 +287,9 @@ int run_server(int port) {
     //  Set up signal handling
     setup_signal_handling();
     int server_fd = setup_server_socket(port);
-    int epoll_fd = setup_epoll(server_fd);
+    timer_fd = setup_cleanup_timerfd();
+    printf("just before: %d\n", timer_fd);
+    int epoll_fd = setup_epoll(server_fd, timer_fd);
 
     printf("Server is listening on port %d\n", port);
 
@@ -217,8 +323,11 @@ int run_server(int port) {
     cleanup_all_clients(&client_list_head);
     free(server_event);
     server_event = NULL;
+    free(timer_event);
+    timer_event = NULL;
     close(epoll_fd);
     close(server_fd);
+    close(timer_fd);
     hash_table_cleanup(hash_table_main, custom_cleanup);
     active_connections = 0;
     // pthread_join(cleanup_thread, NULL);

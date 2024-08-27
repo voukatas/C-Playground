@@ -15,9 +15,9 @@ typedef struct {
 } client_t;
 
 typedef struct {
-        int node_type; // 0 for server and 1 for client
+        int node_type; // 0 for server, 1 for client and 2 for timer
         union {
-                int server_fd;    // Use this if server
+                int server_fd;    // Use this if server or timer
                 client_t *client; // Use this if client
         } data;
 } node_data_t;

@@ -4,8 +4,6 @@
 #include <string.h>
 #include <time.h>
 
-#include "../include/ttl.h"
-
 void custom_cleanup(void *arg) {
     ttl_entry_t *ttl_entry = arg;
     free(ttl_entry->value);
@@ -160,8 +158,7 @@ static void process_command(char *command, char *response) {
             time_t current_time = time(NULL);
             if (difftime(current_time, ttl_entry->timestamp) > ttl_entry->ttl) {
                 // Expired
-                free(ttl_entry->value);
-                hash_table_remove(hash_table_main, key);
+                hash_table_remove(hash_table_main, key, custom_cleanup);
                 response_value = "ERROR: KEY NOT FOUND";
             } else {
                 // Valid
@@ -176,8 +173,7 @@ static void process_command(char *command, char *response) {
         if (ttl_entry == NULL) {
             response_value = "ERROR: KEY NOT FOUND";
         } else {
-            free(ttl_entry->value);
-            hash_table_remove(hash_table_main, key);
+            hash_table_remove(hash_table_main, key, custom_cleanup);
         }
 
     } else if (strncmp(command_type, "CONNECTIONS", 11) == 0 && num_args == 1) {

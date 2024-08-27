@@ -9,6 +9,7 @@
 #include <sys/epoll.h>
 #include "common.h"
 #include "hashtable.h"
+#include "../include/ttl.h"
 
 
 // Unfortunatelly we need to maintain a ds to keep track of all the connected
