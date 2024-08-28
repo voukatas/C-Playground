@@ -4,7 +4,6 @@
 #include <time.h>
 
 typedef struct ttl_entry {
-    //char *key;
     void *value;
     time_t timestamp;
     int ttl;

@@ -10,18 +10,18 @@
 
 // Entry struct
 typedef struct hash_entry {
-        char *key;
-        void *value;
-        struct hash_entry *next;
+    char *key;
+    void *value;
+    struct hash_entry *next;
 
 } hash_entry_t;
 
 // HashTable
 typedef struct hash_table {
-        int capacity;
-        int size;
-        hash_entry_t **table;
-        pthread_mutex_t hash_table_mutex;
+    int capacity;
+    int size;
+    hash_entry_t **table;
+    pthread_mutex_t hash_table_mutex;
 } hash_table_t;
 
 hash_table_t *hash_table_create(int capacity);

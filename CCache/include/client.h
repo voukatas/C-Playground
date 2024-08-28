@@ -15,8 +15,8 @@
 // Unfortunatelly we need to maintain a ds to keep track of all the connected
 // clients so we can cleanup at the shutdown... A linked list
 typedef struct client_node {
-        node_data_t *client_data;
-        struct client_node *next;
+  node_data_t *client_data;
+  struct client_node *next;
 } client_node_t;
 
 void add_client_to_list(client_node_t **head, node_data_t *client_data);

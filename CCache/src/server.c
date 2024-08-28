@@ -161,8 +161,6 @@ static void handle_event(int epoll_fd, struct epoll_event *event) {
     struct sockaddr_in address;
     int addrlen = sizeof(address);
     node_data_t *event_data = (node_data_t *)event->data.ptr;
-    // printf("------------- event value:%p\n", event);
-    // printf("------------- event_data value:%p\n", event_data);
     printf("------------- event_data node type:%d\n", event_data->event_type);
 
     if (event_data != NULL && event_data->event_type == EVENT_SERVER) {
@@ -174,7 +172,8 @@ static void handle_event(int epoll_fd, struct epoll_event *event) {
             perror("Accept failed");
             return;
         }
-        // printf("Accepted client socket\n");
+
+        // Connection accepted at this point
 
         set_non_blocking(client_socket);
 
@@ -249,10 +248,6 @@ static void handle_event(int epoll_fd, struct epoll_event *event) {
             perror("read from timer_fd failed");
             return;
         }
-        // else if (bytes != sizeof(expirations)) {
-        //     fprintf(stderr, "Partial read from timer_fd\n");
-        //     return;
-        // }
         hash_table_cleanup_expired(hash_table_main);
     }
 }
@@ -296,9 +291,6 @@ int run_server(int port) {
 
     struct epoll_event events[MAX_EVENTS];
 
-    // Start cleanup thread
-    // start_ttl_cleanup_thread(hash_table_main);
-
     // Event Loop
     while (atomic_load(&keep_running)) {
         int nfds =
@@ -331,7 +323,6 @@ int run_server(int port) {
     close(timer_fd);
     hash_table_cleanup(hash_table_main, custom_cleanup);
     active_connections = 0;
-    // pthread_join(cleanup_thread, NULL);
     printf("SERVER STOPPED\n");
     return 0;
 }

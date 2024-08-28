@@ -5,7 +5,6 @@ atomic_int keep_running = 1;
 
 void set_event_loop_state(int state) {  // 0 for stop, 1 for running
     atomic_store(&keep_running, state);
-    // keep_running = 0;
 }
 
 void handle_shutdown_signal(int signal_number) {  // 0 for stop, 1 for running

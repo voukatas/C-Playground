@@ -4,10 +4,13 @@
 #include <string.h>
 #include <time.h>
 
+// A custom clean function that is used as a callback in the hashtable
 void custom_cleanup(void *arg) {
     ttl_entry_t *ttl_entry = arg;
     free(ttl_entry->value);
 }
+
+// Adds a client to the linked list which is used to track all the clients
 void add_client_to_list(client_node_t **head, node_data_t *client_data) {
     client_node_t *new_node = malloc(sizeof(client_node_t));
     if (!new_node) {
@@ -52,6 +55,7 @@ void remove_client_from_list(client_node_t **head, node_data_t *client_data) {
     }
 }
 
+// Clean Up/free the clients linked list
 void cleanup_all_clients(client_node_t **head) {
     printf("Cleanup Triggered\n");
     client_node_t *current = *head;
@@ -73,6 +77,8 @@ void cleanup_all_clients(client_node_t **head) {
     *head = NULL;
 }
 
+// Remove a client from the epoll, so it wont track it and remove the client
+// from the client linked list
 void delete_resources(int epoll_fd, client_t *client, struct epoll_event *ev) {
     if (epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client->fd, NULL) == -1) {
         perror("epoll_ctl: EPOLL_CTL_DEL failed");
@@ -81,8 +87,8 @@ void delete_resources(int epoll_fd, client_t *client, struct epoll_event *ev) {
     remove_client_from_list(&client_list_head, (node_data_t *)ev->data.ptr);
 }
 
-void set_error_msg(int epoll_fd, client_t *client, struct epoll_event *ev,
-                   const char *error_response) {
+static void set_error_msg(int epoll_fd, client_t *client,
+                          struct epoll_event *ev, const char *error_response) {
     int response_len = strlen(error_response);
 
     if (client->write_buffer_len + response_len < BUFFER_SIZE) {
@@ -127,7 +133,6 @@ static void process_command(char *command, char *response) {
         new_ttl_entry.value = strdup(value);
         if (!new_ttl_entry.value) {
             fprintf(stderr, "failed to allocate memory during hash_table_set");
-            // free(new_ttl_entry.value);
             response_value = "ERROR: MEMORY ALLOC FAILURE";
             snprintf(response, BUFFER_SIZE, "%s\r\n", response_value);
             printf("Processing command response: %s\n", response);
@@ -182,7 +187,6 @@ static void process_command(char *command, char *response) {
         printf("Processing command response: %s\n", response);
         return;
     } else if (strncmp(command_type, "KEYS_NUM", 8) == 0 && num_args == 1) {
-        // I need to rethink this thing
         snprintf(response, BUFFER_SIZE, "%d\r\n", hash_table_main->size);
         printf("Processing command response: %s\n", response);
         return;
@@ -220,8 +224,6 @@ void handle_client_read(client_t *client, struct epoll_event *ev,
                 client->read_buffer[BUFFER_SIZE - 1] = '\0';
             }
 
-            // printf("Complete buffer: %s", client->read_buffer);
-
             // Check if the buffer contains at least one \r\n
             char *first_rn = strstr(client->read_buffer, "\r\n");
 
@@ -246,7 +248,6 @@ void handle_client_read(client_t *client, struct epoll_event *ev,
 
                 char response[BUFFER_SIZE];
                 process_command(command, response);
-                // const char *response = "Hello World from Server\r\n";
                 int response_len = strlen(response);
 
                 // Check if the write buffer has enough space for the
