@@ -58,6 +58,83 @@ make clean
 echo -ne "SET key_test value_test 30\r\n" | nc localhost 8080
 ```
 
+## API Usage
+CCache is a text-based protocol key-value store that supports basic operations like SET, GET, DELETE, and a few utility commands. Below is a description of the commands supported by the cache and how to use them:
+
+1. SET Command
+- Usage: SET <key> <value> <TTL>
+- Description: Sets a key-value pair in the cache with a Time-To-Live (TTL) in seconds.
+- Response: OK\r\n if the operation is successful. Returns an error if memory allocation fails or the TTL is invalid.
+Example:
+```bash
+SET my_key my_value 30\r\n
+OK\r\n
+```
+2. GET Command
+- Usage: GET <key>
+- Description: Retrieves the value for a given key if it exists and has not expired.
+- Response: <value>\r\n if the key exists and is valid. Returns ERROR: KEY NOT FOUND\r\n if the key does not exist or has expired.
+Example:
+```bash
+GET my_key\r\n
+my_value\r\n
+```
+3. DELETE Command
+- Usage: DELETE <key>
+- Description: Removes a key-value pair from the cache if it exists.
+- Response: OK\r\n if the key was successfully deleted. Returns ERROR: KEY NOT FOUND\r\n if the key does not exist.
+Example:
+```bash
+DELETE my_key\r\n
+OK\r\n
+```
+4. CONNECTIONS Command
+- Usage: CONNECTIONS
+- Description: Returns the number of active client connections to the cache server.
+- Response: <number>\r\n, where <number> is the count of active connections.
+Example:
+```bash
+CONNECTIONS\r\n
+1\r\n
+```
+5. KEYS_NUM Command
+- Usage: KEYS_NUM
+- Description: Returns the number of keys currently stored in the cache.
+- Response: <number>\r\n, where <number> is the count of keys.
+Example:
+```bash
+KEYS_NUM\r\n
+2\r\n
+```
+### Error Handling
+- Malformed Commands: Returns ERROR: UNKNOWN OR MALFORMED COMMAND\r\n if a command is not recognized or is improperly formatted.
+- Memory Allocation Failures: Returns ERROR: MEMORY ALLOC FAILURE\r\n if there is an issue allocating memory for the operation.
+- TTL Issues: Returns ERROR: INVALID TTL\r\n if the TTL provided for a SET command is not a positive integer.
+
+### Example Usage
+Below is an example of how to interact with the cache using netcat (nc):
+```bash
+# Set a key-value pair with a TTL of 30 seconds
+echo -ne "SET test_key test_value 30\r\n" | nc localhost 8080
+
+# Retrieve the value for an existing key
+echo -ne "GET test_key\r\n" | nc localhost 8080
+
+# Attempt to retrieve a non-existent key
+echo -ne "GET invalid_key\r\n" | nc localhost 8080
+
+# Delete an existing key
+echo -ne "DELETE test_key\r\n" | nc localhost 8080
+
+# Get the number of active connections
+echo -ne "CONNECTIONS\r\n" | nc localhost 8080
+
+# Get the number of keys currently in the cache
+echo -ne "KEYS_NUM\r\n" | nc localhost 8080
+```
+## Dependencies
+CCache uses a custom hashtable library to manage key-value pairs efficiently. This library is developed as a separate project and can be found on GitHub on the same repo.
+
 ## To-Do
 - Either remove the linked list that keeps track of the connections (since it adds management complexity) or implement a periodic validation of the connections
 - Add support for more cache eviction policies (e.g., LRU, LFU)
