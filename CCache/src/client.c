@@ -7,12 +7,14 @@
 // A custom clean function that is used as a callback in the hashtable
 void custom_cleanup(void *arg) {
     ttl_entry_t *ttl_entry = arg;
-    free(ttl_entry->value);
+    if (ttl_entry && ttl_entry->value) {
+        free(ttl_entry->value);
+    }
 }
 
 bool is_entry_expired(ttl_entry_t *entry, time_t current_time) {
     if (entry->ttl == 0) {
-        printf("Not expired");
+        printf("Not expired\n");
         return false;
     }
     return difftime(current_time, entry->timestamp) > entry->ttl;
