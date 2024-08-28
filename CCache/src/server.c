@@ -262,8 +262,7 @@ void hash_table_cleanup_expired(hash_table_t *ht) {
         while (entry != NULL) {
             ttl_entry_t *ttl_entry_node = entry->value;
             hash_entry_t *temp = entry->next;
-            if (difftime(current_time, ttl_entry_node->timestamp) >
-                ttl_entry_node->ttl) {
+            if (is_entry_expired(ttl_entry_node, current_time)) {
                 //  hash_table_remove will remove also the entry node
                 printf("---- CleanUp Key: %s\n", entry->key);
                 hash_table_remove(hash_table_main, entry->key, custom_cleanup);

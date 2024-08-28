@@ -12,7 +12,8 @@
 #define HASH_TABLE_STARTING_SIZE 1000 
 #else
 // The maximum bytes a key can hold . 1024*1024
-#define BUFFER_SIZE 1048576
+//#define BUFFER_SIZE 1048576
+#define BUFFER_SIZE 64*1024
 // The interval for the clean up mechanism in seconds
 #define CLEAN_UP_TIME 15 
 // Starting size of hashtable

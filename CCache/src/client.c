@@ -10,6 +10,14 @@ void custom_cleanup(void *arg) {
     free(ttl_entry->value);
 }
 
+bool is_entry_expired(ttl_entry_t *entry, time_t current_time) {
+    if (entry->ttl == 0) {
+        printf("Not expired");
+        return false;
+    }
+    return difftime(current_time, entry->timestamp) > entry->ttl;
+}
+
 // Adds a client to the linked list which is used to track all the clients
 void add_client_to_list(client_node_t **head, node_data_t *client_data) {
     client_node_t *new_node = malloc(sizeof(client_node_t));
@@ -139,13 +147,19 @@ static void process_command(char *command, char *response) {
             return;
         }
         new_ttl_entry.timestamp = time(NULL);
-        new_ttl_entry.ttl = atoi(ttl_value);
-        if (new_ttl_entry.ttl <= 0) {
+
+        char *endptr;
+        errno = 0;
+        long ttl = strtol(ttl_value, &endptr, 10);
+        if (errno != 0 || endptr == ttl_value || *endptr != '\0' || ttl < 0) {
             response_value = "ERROR: INVALID TTL";
             snprintf(response, BUFFER_SIZE, "%s\r\n", response_value);
             printf("Processing command response: %s\n", response);
+            free(new_ttl_entry.value);
             return;
         }
+
+        new_ttl_entry.ttl = (int)ttl;
 
         int error = hash_table_set(hash_table_main, key, &new_ttl_entry,
                                    sizeof(new_ttl_entry), custom_cleanup);
@@ -161,7 +175,7 @@ static void process_command(char *command, char *response) {
             response_value = "ERROR: KEY NOT FOUND";
         } else {
             time_t current_time = time(NULL);
-            if (difftime(current_time, ttl_entry->timestamp) > ttl_entry->ttl) {
+            if (is_entry_expired(ttl_entry, current_time)) {
                 // Expired
                 hash_table_remove(hash_table_main, key, custom_cleanup);
                 response_value = "ERROR: KEY NOT FOUND";
@@ -227,7 +241,8 @@ void handle_client_read(client_t *client, struct epoll_event *ev,
             // Check if the buffer contains at least one \r\n
             char *first_rn = strstr(client->read_buffer, "\r\n");
 
-            // If a \r\n exists, ensure there's only one and process the command
+            // If a \r\n exists, ensure there's only one and process the
+            // command
             if (first_rn != NULL) {
                 // Check if there is any data after the first \r\n
                 if (first_rn + 2 <

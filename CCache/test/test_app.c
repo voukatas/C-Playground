@@ -324,6 +324,36 @@ void test_cache_api_error_command_too_large(void) {
     pthread_join(server_thread, NULL);
 }
 
+void test_invalid_ttl_value(void) {
+    set_event_loop_state(1);
+    pthread_t server_thread;
+    int port = 8080;
+    char *ip = "127.0.0.1";
+    char buffer[BUFFER_SIZE];
+
+    pthread_create(&server_thread, NULL, run_server_thread, &port);
+
+    // Small delay for server to init
+    server_init_delay();
+
+    // Test scenario
+    int sockfd = connect_client(port, ip);
+
+    send_client_msg(sockfd, "SET test_key11 test_value -1\r\n", buffer);
+    TEST_ASSERT_EQUAL_STRING("ERROR: INVALID TTL\r\n", buffer);
+
+    send_client_msg(sockfd, "SET test_key11 test_value aa\r\n", buffer);
+    TEST_ASSERT_EQUAL_STRING("ERROR: INVALID TTL\r\n", buffer);
+
+    disconnect_client(sockfd);
+
+    //   To shutdown the event loop
+    set_event_loop_state(0);
+    connect_disconnect_client(port, "127.0.0.1");
+
+    pthread_join(server_thread, NULL);
+}
+
 void test_passive_ttl_cache(void) {
     set_event_loop_state(1);
     pthread_t server_thread;
@@ -346,13 +376,22 @@ void test_passive_ttl_cache(void) {
     send_client_msg(sockfd, "KEYS_NUM\r\n", buffer);
     TEST_ASSERT_EQUAL_STRING("1\r\n", buffer);
 
+    // Should not expire
+    send_client_msg(sockfd, "SET test_key_no_expire no_expire 0\r\n", buffer);
+    TEST_ASSERT_EQUAL_STRING("OK\r\n", buffer);
+    send_client_msg(sockfd, "GET test_key_no_expire\r\n", buffer);
+    TEST_ASSERT_EQUAL_STRING("no_expire\r\n", buffer);
+
     // Test GET command
     sleep(2);
     send_client_msg(sockfd, "GET test_key11\r\n", buffer);
     TEST_ASSERT_EQUAL_STRING("ERROR: KEY NOT FOUND\r\n", buffer);
 
+    send_client_msg(sockfd, "GET test_key_no_expire\r\n", buffer);
+    TEST_ASSERT_EQUAL_STRING("no_expire\r\n", buffer);
+
     send_client_msg(sockfd, "KEYS_NUM\r\n", buffer);
-    TEST_ASSERT_EQUAL_STRING("0\r\n", buffer);
+    TEST_ASSERT_EQUAL_STRING("1\r\n", buffer);
 
     disconnect_client(sockfd);
 
@@ -382,13 +421,23 @@ void test_active_ttl_cache(void) {
     TEST_ASSERT_EQUAL_STRING("OK\r\n", buffer);
     send_client_msg(sockfd, "GET test_key11\r\n", buffer);
     TEST_ASSERT_EQUAL_STRING("test_value\r\n", buffer);
+
+    // Should not expire
+    send_client_msg(sockfd, "SET test_key_no_expire no_expire 0\r\n", buffer);
+    TEST_ASSERT_EQUAL_STRING("OK\r\n", buffer);
+    send_client_msg(sockfd, "GET test_key_no_expire\r\n", buffer);
+    TEST_ASSERT_EQUAL_STRING("no_expire\r\n", buffer);
+
     send_client_msg(sockfd, "KEYS_NUM\r\n", buffer);
-    TEST_ASSERT_EQUAL_STRING("1\r\n", buffer);
+    TEST_ASSERT_EQUAL_STRING("2\r\n", buffer);
 
     // Test GET command
     sleep(4);
+    send_client_msg(sockfd, "GET test_key_no_expire\r\n", buffer);
+    TEST_ASSERT_EQUAL_STRING("no_expire\r\n", buffer);
+
     send_client_msg(sockfd, "KEYS_NUM\r\n", buffer);
-    TEST_ASSERT_EQUAL_STRING("0\r\n", buffer);
+    TEST_ASSERT_EQUAL_STRING("1\r\n", buffer);
     // send_client_msg(sockfd, "GET test_key11\r\n", buffer);
     // TEST_ASSERT_EQUAL_STRING("ERROR: KEY NOT FOUND\r\n", buffer);
 
@@ -413,6 +462,7 @@ int main(void) {
     RUN_TEST(test_cache_api_error_command_too_large);
     RUN_TEST(test_passive_ttl_cache);
     RUN_TEST(test_active_ttl_cache);
+    RUN_TEST(test_invalid_ttl_value);
 
     return UNITY_END();
 }

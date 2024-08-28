@@ -11,7 +11,7 @@ A simple single-threaded event-driven program that wannabe a TTL cache
 
 The cache is configured using the `config.h` file. The following are the current default configurations:
 
-- **Maximum Value Size**: Configured to support almost `1024 * 1024` bytes as a value. The actual size is slightly reduced to accommodate the `SET` keyword and the bytes for the key.
+- **Maximum Value Size**: Configured to support almost 64K bytes as a value. The actual size is slightly reduced to accommodate the `SET` keyword and the bytes for the key.
 - **Port**: The server listens on port `8080`.
 - **Maximum Epoll Events**: The maximum number of events that `epoll` can retrieve is set to `64`.
 - **Cleanup Interval**: The cleanup mechanism for expired keys kicks in every `60` seconds.
@@ -63,7 +63,7 @@ CCache is a text-based protocol key-value store that supports basic operations l
 
 1. SET Command
 - Usage: SET <key> <value> <TTL>
-- Description: Sets a key-value pair in the cache with a Time-To-Live (TTL) in seconds.
+- Description: Sets a key-value pair in the cache with a Time-To-Live (TTL) in seconds. If TTL is set to 0, then the key doesn't expire.
 - Response: OK\r\n if the operation is successful. Returns an error if memory allocation fails or the TTL is invalid.
 Example:
 ```bash
@@ -139,3 +139,4 @@ CCache uses a custom hashtable library to manage key-value pairs efficiently. Th
 - Either remove the linked list that keeps track of the connections (since it adds management complexity) or implement a periodic validation of the connections
 - Add support for more cache eviction policies (e.g., LRU, LFU)
 - Add more unit tests to increase code coverage and stability
+- Replace the stack allocations with heap allocations for the arrays that use the BUFFER_SIZE to support more than 64Kb key-value values. (Currently if more bytes are used it will overflow the stack)
