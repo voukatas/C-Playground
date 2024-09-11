@@ -228,7 +228,7 @@ void handle_client_read(client_t *client, struct epoll_event *ev,
 
     if (bytes_read > 0) {
         // Accumulate read data
-        if (client->read_buffer_len + bytes_read <= BUFFER_SIZE) {
+        if (client->read_buffer_len + bytes_read < BUFFER_SIZE) {
             memcpy(client->read_buffer + client->read_buffer_len, temp_buffer,
                    bytes_read);
             client->read_buffer_len += bytes_read;
@@ -236,8 +236,6 @@ void handle_client_read(client_t *client, struct epoll_event *ev,
             // Ensure the string is terminated
             if (client->read_buffer_len < BUFFER_SIZE) {
                 client->read_buffer[client->read_buffer_len] = '\0';
-            } else {
-                client->read_buffer[BUFFER_SIZE - 1] = '\0';
             }
 
             // Check if the buffer contains at least one \r\n
@@ -290,10 +288,9 @@ void handle_client_read(client_t *client, struct epoll_event *ev,
                     return;
                 }
 
-            } else if (client->read_buffer_len == BUFFER_SIZE) {
+            } else if (client->read_buffer_len == BUFFER_SIZE - 1) {
                 // Buffer is full but no complete command, this is an error
-                const char *error_response =
-                    "ERROR: Command too large or incomplete\r\n";
+                const char *error_response = "ERROR: Command incomplete\r\n";
                 set_error_msg(epoll_fd, client, ev, error_response);
                 return;
             }
